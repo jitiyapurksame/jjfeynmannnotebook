@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>J.J.'s Ship Log</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><text y=%2220%22 font-size=%2220%22>%E2%9A%93</text></svg>" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; background: #f8fafc; -webkit-tap-highlight-color: transparent; }
+  #root { min-height: 100vh; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div style="padding:2rem; font-family: system-ui, sans-serif; color: #94a3b8; font-size: 14px;">Loading&hellip;</div>
+</div>
+
+<script type="text/plain" id="app-source">
+const { useState, useEffect, useMemo, useRef } = React;
+
+function IconBase({ size = 24, className = "", children, ...rest }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...rest}
+    >
+      {children}
+    </svg>
+  );
+}
+
+const Search = (p) => (<IconBase {...p}><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></IconBase>);
+const Plus = (p) => (<IconBase {...p}><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></IconBase>);
+const X = (p) => (<IconBase {...p}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></IconBase>);
+const ChevronDown = (p) => (<IconBase {...p}><polyline points="6 9 12 15 18 9" /></IconBase>);
+const ChevronRight = (p) => (<IconBase {...p}><polyline points="9 6 15 12 9 18" /></IconBase>);
+const Ship = (p) => (<IconBase {...p}><path d="M2 20c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0" /><path d="M4 16l1-6h14l1 6" /><line x1="12" y1="2" x2="12" y2="10" /><path d="M12 3l5 3-5 1z" /></IconBase>);
+const Compass = (p) => (<IconBase {...p}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88" /></IconBase>);
+const Anchor = (p) => (<IconBase {...p}><circle cx="12" cy="5" r="2" /><line x1="12" y1="7" x2="12" y2="21" /><line x1="8" y1="9" x2="16" y2="9" /><path d="M5 12H2a10 10 0 0 0 20 0h-3" /></IconBase>);
+const Waves = (p) => (<IconBase {...p}><path d="M2 8c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0" /><path d="M2 15c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0 3.5 2 5 0" /></IconBase>);
+const LifeBuoy = (p) => (<IconBase {...p}><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" /><line x1="4.93" y1="4.93" x2="9.17" y2="9.17" /><line x1="14.83" y1="14.83" x2="19.07" y2="19.07" /><line x1="14.83" y1="9.17" x2="19.07" y2="4.93" /><line x1="4.93" y1="19.07" x2="9.17" y2="14.83" /></IconBase>);
+const Navigation = (p) => (<IconBase {...p}><polygon points="3 11 22 2 13 21 11 13 3 11" /></IconBase>);
+const Flag = (p) => (<IconBase {...p}><line x1="4" y1="22" x2="4" y2="3" /><path d="M4 4c2-1 4-1 6 0s4 1 6 0v10c-2 1-4 1-6 0s-4-1-6 0z" /></IconBase>);
+const Radio = (p) => (<IconBase {...p}><circle cx="12" cy="12" r="2" /><path d="M4.93 19.07a10 10 0 0 1 0-14.14" /><path d="M7.76 16.24a6 6 0 0 1 0-8.48" /><path d="M16.24 7.76a6 6 0 0 1 0 8.48" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></IconBase>);
+const Fuel = (p) => (<IconBase {...p}><line x1="3" y1="22" x2="15" y2="22" /><line x1="4" y1="9" x2="14" y2="9" /><path d="M14 22V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v18" /><path d="M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2v0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5" /></IconBase>);
+const ImageIcon = (p) => (<IconBase {...p}><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></IconBase>);
+const Trash2 = (p) => (<IconBase {...p}><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></IconBase>);
+const Check = (p) => (<IconBase {...p}><polyline points="20 6 9 17 4 12" /></IconBase>);
+const Star = (p) => (<IconBase {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26" /></IconBase>);
+const Eraser = (p) => (<IconBase {...p}><path d="M20 20H9L4 15a2 2 0 0 1 0-2.83l7.17-7.17a2 2 0 0 1 2.83 0l6 6a2 2 0 0 1 0 2.83L14 20" /><line x1="9" y1="20" x2="20" y2="20" /></IconBase>);
+const Undo2 = (p) => (<IconBase {...p}><path d="M9 14L4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></IconBase>);
+const Crown = (p) => (<IconBase {...p}><path d="M2 18h20l-2-9-5 5-3-8-3 8-5-5-2 9z" /></IconBase>);
+const Medal = (p) => (<IconBase {...p}><circle cx="12" cy="8" r="6" /><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" /></IconBase>);
+const Award = (p) => (<IconBase {...p}><circle cx="12" cy="9" r="6" /><path d="M9 15l-1.5 7L12 19l4.5 3L15 15" /></IconBase>);
+const Download = (p) => (<IconBase {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></IconBase>);
+const Copy = (p) => (<IconBase {...p}><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></IconBase>);
+const CheckIcon = Check;
+const Pencil = (p) => (<IconBase {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></IconBase>);
+
+const SUBJECTS = ["Biology", "Chemistry", "Physics", "Earth science", "Astronomy", "Math", "General"];
+const EXAM_TAGS = [
+  { id: "KVIS", label: "KVIS", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
+  { id: "ASEAN", label: "ASEAN scholarship", color: "bg-rose-100 text-rose-800 border-rose-200" },
+];
+const VIEW_TAGS = [
+  { id: "school", label: "YBIP crossing", icon: Ship, color: "bg-blue-100 text-blue-900 border-blue-200" },
+  { id: "explore", label: "Just curious", icon: Compass, color: "bg-amber-100 text-amber-800 border-amber-200" },
+];
+
+const RANKS = [
+  "Cabin boy", "Deckhand", "Able seaman", "Petty officer", "Bosun",
+  "First mate", "Chief officer", "Staff captain", "Captain", "Commodore",
+];
+const RANK_ICONS = [
+  Anchor, LifeBuoy, Compass, Flag, Radio,
+  Ship, Navigation, Award, Medal, Crown,
+];
+const MILES_PER_RANK = 150;
+const MILES_PER_CHECKPOINT = 15;
+const COAL_PER_CHECKPOINT = 5;
+const BONUS_ALL_MILES = 30;
+const BONUS_ALL_COAL = 20;
+const CHART_BONUS_COAL = 10;
+
+const uid = () => Math.random().toString(36).slice(2, 10);
+
+const emptyEntry = () => ({
+  id: uid(),
+  date: new Date().toISOString().slice(0, 10),
+  eli10: "",
+  why: "",
+  steps: "",
+  example: "",
+  bug: "",
+  fix: "",
+  sketchNote: "",
+  sketchImage: null,
+  q1: "",
+  q2: "",
+  q3: "",
+  summary: "",
+});
+
+const SEED_TOPICS = [
+  { id: uid(), name: "Photosynthesis", subject: "Biology", viewTags: ["school", "explore"], examTags: ["KVIS", "ASEAN"] },
+  { id: uid(), name: "Cell structure", subject: "Biology", viewTags: ["school"], examTags: ["KVIS"] },
+  { id: uid(), name: "Hydrogen fuel cells", subject: "Chemistry", viewTags: ["explore"], examTags: ["ASEAN"] },
+  { id: uid(), name: "Forces and motion", subject: "Physics", viewTags: ["school"], examTags: [] },
+];
+
+function useStorage(key, fallback) {
+  const [value, setValue] = useState(fallback);
+  const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw !== null) setValue(JSON.parse(raw));
+    } catch (e) {
+      // key doesn't exist yet or failed to parse
+    } finally {
+      setLoaded(true);
+    }
+  }, [key]);
+
+  const persist = async (next) => {
+    setValue(next);
+    try {
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch (e) {
+      console.error("storage save failed", e);
+    }
+  };
+
+  return [value, persist, loaded];
+}
+
+function checkpoints(entry) {
+  return [
+    { key: "eli10", label: "Passenger briefing", done: !!entry.eli10.trim() },
+    { key: "why", label: "Engine room report", done: !!entry.why.trim() },
+    { key: "steps", label: "Ports of call", done: !!entry.steps.trim() },
+    { key: "example", label: "Sightings", done: !!entry.example.trim() },
+    { key: "bugfix", label: "SOS / all clear", done: !!(entry.bug.trim() && entry.fix.trim()) },
+    { key: "sketch", label: "Chart the course", done: !!(entry.sketchNote.trim() || entry.sketchImage) },
+    { key: "questions", label: "Messages in a bottle", done: !!(entry.q1.trim() || entry.q2.trim() || entry.q3.trim()) },
+    { key: "summary", label: "Ship's manifest", done: !!entry.summary.trim() },
+  ];
+}
+
+function scoreEntry(entry) {
+  const cps = checkpoints(entry);
+  const doneCount = cps.filter((c) => c.done).length;
+  const all = doneCount === cps.length;
+  let miles = doneCount * MILES_PER_CHECKPOINT + (all ? BONUS_ALL_MILES : 0);
+  let coal = doneCount * COAL_PER_CHECKPOINT + (all ? BONUS_ALL_COAL : 0);
+  if (entry.sketchImage) coal += CHART_BONUS_COAL;
+  const stars = doneCount >= 8 ? 3 : doneCount >= 5 ? 2 : doneCount >= 2 ? 1 : 0;
+  return { miles, coal, stars, doneCount, total: cps.length };
+}
+
+function entryToText(entry, topicName) {
+  const stepList = entry.steps ? entry.steps.split("\n").filter(Boolean) : [];
+  const qs = [entry.q1, entry.q2, entry.q3].filter((q) => q && q.trim());
+  const lines = [];
+  lines.push(`${topicName || "Topic"} — Feynman Summary`);
+  lines.push(`Date: ${entry.date}`);
+  lines.push("");
+  if (entry.eli10) { lines.push("Explanation:"); lines.push(entry.eli10); lines.push(""); }
+  if (entry.why) { lines.push("Why it happens:"); lines.push(entry.why); lines.push(""); }
+  if (stepList.length) { lines.push("Steps:"); stepList.forEach((s, i) => lines.push(`${i + 1}. ${s}`)); lines.push(""); }
+  if (entry.example) { lines.push("Real-world example:"); lines.push(entry.example); lines.push(""); }
+  if (entry.bug || entry.fix) {
+    lines.push("Common mistake:");
+    if (entry.bug) lines.push(`Misconception: ${entry.bug}`);
+    if (entry.fix) lines.push(`Correction: ${entry.fix}`);
+    lines.push("");
+  }
+  if (entry.sketchNote) { lines.push("Sketch notes:"); lines.push(entry.sketchNote); lines.push(""); }
+  if (qs.length) { lines.push("Open questions:"); qs.forEach((q) => lines.push(`- ${q}`)); lines.push(""); }
+  if (entry.summary) { lines.push("Summary:"); lines.push(entry.summary); }
+  return lines.join("\n");
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function rankFromMiles(totalMiles) {
+  const level = Math.floor(totalMiles / MILES_PER_RANK) + 1;
+  const idx = Math.min(level - 1, RANKS.length - 1);
+  const extra = level > RANKS.length ? ` ${level - RANKS.length + 1}` : "";
+  const title = RANKS[idx] + extra;
+  const icon = RANK_ICONS[idx];
+  const into = totalMiles % MILES_PER_RANK;
+  return { level, title, icon, pct: Math.round((into / MILES_PER_RANK) * 100) };
+}
+
+const SAMPLE_ENTRY_BASE = {
+  id: uid(),
+  topicId: SEED_TOPICS[0].id, // Photosynthesis
+  date: "2026-08-01",
+  eli10: "Plants are like tiny solar-powered factories. They catch sunlight and use it to turn water and carbon dioxide into food (glucose). While making food, they also release oxygen as a byproduct.",
+  why: "Because chlorophyll — the green pigment in leaves — captures sunlight energy. That captured energy is what powers the whole food-making reaction.",
+  steps: "Sunlight\nLeaf\nChlorophyll\nWater + CO₂\nGlucose\nOxygen",
+  example: "Solar panels basically copy what plants do — capturing light and converting it into usable energy. Scientists are also trying to build artificial leaves that do the same reaction outside of a plant.",
+  bug: "Plants eat soil to grow.",
+  fix: "Plants make their own food using sunlight, water, and CO₂ — soil mainly supplies water and minerals, not food itself.",
+  sketchNote: "Drew a leaf cross-section: sun rays hitting the leaf, arrow down into a chloroplast, water and CO₂ arrows going in, glucose and O₂ arrows coming out.",
+  sketchImage: null,
+  q1: "Why is oxygen released as a \"waste\" product?",
+  q2: "What happens to a plant if it gets no sunlight at all for a week?",
+  q3: "Can algae do photosynthesis the same way land plants do?",
+  summary: "Plants convert sunlight into chemical energy stored as glucose.",
+};
+const SAMPLE_SCORE = scoreEntry(SAMPLE_ENTRY_BASE);
+const SEED_ENTRIES = [
+  { ...SAMPLE_ENTRY_BASE, milesEarned: SAMPLE_SCORE.miles, coalEarned: SAMPLE_SCORE.coal, starsEarned: SAMPLE_SCORE.stars },
+];
+const SEED_LEDGER = {
+  totalMiles: SAMPLE_SCORE.miles,
+  totalCoal: SAMPLE_SCORE.coal,
+  totalStars: SAMPLE_SCORE.stars,
+  topicStars: { [SEED_TOPICS[0].id]: SAMPLE_SCORE.stars },
+};
+
+function Chip({ children, className = "" }) {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${className}`}>
+      {children}
+    </span>
+  );
+}
+
+function TagToggle({ active, onClick, className, children }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 px-3 py-2.5 min-h-11 rounded-lg text-xs font-medium border transition ${
+        active ? className : "bg-white text-slate-400 border-slate-200"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StarRow({ stars, size = 12 }) {
+  return (
+    <div className="flex gap-0.5">
+      {[0, 1, 2].map((i) => (
+        <Star key={i} size={size} className={i < stars ? "fill-amber-400 text-amber-500" : "text-slate-200"} />
+      ))}
+    </div>
+  );
+}
+
+function Hud({ totalMiles, totalCoal, totalStars, justPromoted }) {
+  const { level, title, icon: RankIcon, pct } = rankFromMiles(totalMiles);
+  return (
+    <div className="rounded-xl border border-blue-900 bg-blue-950 text-white px-4 py-3 mb-5 relative overflow-hidden">
+      <Waves size={120} className="absolute -right-4 -bottom-6 text-blue-900 opacity-40" />
+      {justPromoted && (
+        <div className="absolute inset-0 bg-amber-400/90 text-blue-950 flex items-center justify-center font-bold text-sm animate-pulse z-10">
+          PROMOTED! Now: {title}
+        </div>
+      )}
+      <div className="flex items-center justify-between flex-wrap gap-3 relative">
+        <div className="flex items-center gap-3">
+          <div className="relative w-11 h-11 rounded-lg bg-amber-400 flex items-center justify-center shrink-0 text-blue-950">
+            <RankIcon size={22} />
+            <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 min-w-[18px] min-h-[18px] px-1 rounded-full bg-blue-950 border border-amber-300 text-amber-300 text-[10px] font-bold flex items-center justify-center">
+              {level}
+            </span>
+          </div>
+          <div>
+            <p className="text-xs text-blue-300 leading-none mb-1">Rank</p>
+            <p className="text-sm font-semibold leading-none">{title}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-1.5">
+            <Fuel size={16} className="text-amber-400" />
+            <span className="font-semibold">{totalCoal}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Star size={16} className="fill-amber-400 text-amber-400" />
+            <span className="font-semibold">{totalStars}</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-2.5 relative">
+        <div className="h-2 bg-blue-900 rounded-full overflow-hidden">
+          <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${pct}%` }} />
+        </div>
+        <p className="text-[10px] text-blue-300 mt-1 flex items-center gap-1"><Navigation size={10} /> {pct}% to next rank</p>
+      </div>
+    </div>
+  );
+}
+
+function NewTopicForm({ onCancel, onCreate }) {
+  const [name, setName] = useState("");
+  const [subject, setSubject] = useState("Biology");
+  const [viewTags, setViewTags] = useState(["school"]);
+  const [examTags, setExamTags] = useState([]);
+
+  const toggle = (list, setList, id) =>
+    setList(list.includes(id) ? list.filter((t) => t !== id) : [...list, id]);
+
+  return (
+    <div className="border border-slate-200 rounded-lg p-3 bg-slate-50 space-y-3">
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Voyage name (what are you learning?)"
+        className="w-full text-base sm:text-sm px-3 py-2.5 min-h-11 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-800"
+      />
+      <select
+        value={subject}
+        onChange={(e) => setSubject(e.target.value)}
+        className="w-full text-base sm:text-sm px-3 py-2.5 min-h-11 rounded-lg border border-slate-300"
+      >
+        {SUBJECTS.map((s) => (
+          <option key={s} value={s}>{s}</option>
+        ))}
+      </select>
+      <div className="flex flex-wrap gap-1.5">
+        {VIEW_TAGS.map((v) => (
+          <TagToggle key={v.id} active={viewTags.includes(v.id)} className={v.color} onClick={() => toggle(viewTags, setViewTags, v.id)}>
+            <v.icon size={12} /> {v.label}
+          </TagToggle>
+        ))}
+        {EXAM_TAGS.map((t) => (
+          <TagToggle key={t.id} active={examTags.includes(t.id)} className={t.color} onClick={() => toggle(examTags, setExamTags, t.id)}>
+            {t.label}
+          </TagToggle>
+        ))}
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <button onClick={onCancel} className="text-sm px-4 py-2.5 min-h-11 rounded-lg text-slate-500 hover:bg-slate-100">
+          Cancel
+        </button>
+        <button
+          disabled={!name.trim()}
+          onClick={() => name.trim() && onCreate({ id: uid(), name: name.trim(), subject, viewTags, examTags })}
+          className="text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30 flex items-center gap-1.5"
+        >
+          <Anchor size={14} /> Chart voyage
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, hint, done, icon: Icon, children }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`flex items-center justify-center w-5 h-5 rounded-full border text-[10px] shrink-0 ${done ? "bg-blue-900 border-blue-900 text-white" : "border-slate-300 text-transparent"}`}>
+          <Check size={11} />
+        </span>
+        {Icon && (
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-900 shrink-0">
+            <Icon size={17} />
+          </span>
+        )}
+        <label className="text-sm sm:text-base font-semibold text-slate-700 leading-snug">{label}</label>
+      </div>
+      {hint && <p className="text-xs text-slate-400 mb-1.5 ml-16">{hint}</p>}
+      {children}
+    </div>
+  );
+}
+
+const inputCls = "w-full text-base sm:text-sm px-3 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-800 bg-white";
+
+const INK_COLORS = ["#0f172a", "#1e3a8a", "#b91c1c", "#a16207", "#15803d", "#7c3aed", "#eab308"];
+const BRUSH_SIZES = [2, 4, 8];
+
+function SketchCanvas({ onSave }) {
+  const canvasRef = useRef(null);
+  const drawingRef = useRef(false);
+  const historyRef = useRef([]);
+  const [color, setColor] = useState(INK_COLORS[0]);
+  const [size, setSize] = useState(4);
+  const [eraser, setEraser] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
+
+  useEffect(() => {
+    const ctx = canvasRef.current.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  }, []);
+
+  const getPos = (e) => {
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (canvas.width / rect.width),
+      y: (e.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const pushHistory = () => {
+    historyRef.current.push(canvasRef.current.toDataURL());
+    if (historyRef.current.length > 15) historyRef.current.shift();
+  };
+
+  const startDraw = (e) => {
+    e.preventDefault();
+    pushHistory();
+    drawingRef.current = true;
+    const ctx = canvasRef.current.getContext("2d");
+    const { x, y } = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    canvasRef.current.setPointerCapture(e.pointerId);
+  };
+
+  const draw = (e) => {
+    if (!drawingRef.current) return;
+    e.preventDefault();
+    const ctx = canvasRef.current.getContext("2d");
+    const { x, y } = getPos(e);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = eraser ? "#ffffff" : color;
+    ctx.lineWidth = eraser ? size * 5 : size;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    setHasContent(true);
+  };
+
+  const endDraw = () => { drawingRef.current = false; };
+
+  const undo = () => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    const last = historyRef.current.pop();
+    if (!last) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      setHasContent(false);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = last;
+  };
+
+  const clearAll = () => {
+    pushHistory();
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    setHasContent(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg p-2">
+        <div className="flex items-center gap-1.5">
+          {INK_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => { setColor(c); setEraser(false); }}
+              className={`w-9 h-9 min-h-9 rounded-full border-2 ${!eraser && color === c ? "border-blue-800" : "border-transparent"}`}
+              style={{ backgroundColor: c }}
+              aria-label={`ink color ${c}`}
+            />
+          ))}
+        </div>
+        <div className="w-px h-7 bg-slate-200" />
+        <div className="flex items-center gap-1">
+          {BRUSH_SIZES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => { setSize(s); setEraser(false); }}
+              className={`w-9 h-9 min-h-9 rounded-lg border flex items-center justify-center ${size === s && !eraser ? "border-blue-800 bg-blue-50" : "border-slate-200 bg-white"}`}
+            >
+              <span className="rounded-full bg-slate-700" style={{ width: s + 3, height: s + 3 }} />
+            </button>
+          ))}
+        </div>
+        <div className="w-px h-7 bg-slate-200" />
+        <button
+          type="button"
+          onClick={() => setEraser(!eraser)}
+          className={`flex items-center gap-1 px-3 py-2 min-h-9 rounded-lg text-xs font-medium border ${eraser ? "bg-blue-900 text-white border-blue-900" : "bg-white text-slate-500 border-slate-200"}`}
+        >
+          <Eraser size={14} /> Eraser
+        </button>
+        <button type="button" onClick={undo} className="flex items-center gap-1 px-3 py-2 min-h-9 rounded-lg text-xs font-medium border bg-white text-slate-500 border-slate-200">
+          <Undo2 size={14} /> Undo
+        </button>
+        <button type="button" onClick={clearAll} className="flex items-center gap-1 px-3 py-2 min-h-9 rounded-lg text-xs font-medium border bg-white text-slate-500 border-slate-200">
+          <Trash2 size={14} /> Clear
+        </button>
+      </div>
+
+      <canvas
+        ref={canvasRef}
+        width={900}
+        height={420}
+        onPointerDown={startDraw}
+        onPointerMove={draw}
+        onPointerUp={endDraw}
+        onPointerLeave={endDraw}
+        className="w-full rounded-lg border border-slate-300 bg-white touch-none"
+        style={{ aspectRatio: "900 / 420" }}
+      />
+
+      <button
+        type="button"
+        onClick={() => onSave(canvasRef.current.toDataURL("image/png"))}
+        disabled={!hasContent}
+        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30"
+      >
+        <Compass size={14} /> Save sketch to log
+      </button>
+    </div>
+  );
+}
+
+function escapeXml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function MindMapEditor({ onSave }) {
+  const [heading, setHeading] = useState("");
+  const [nodes, setNodes] = useState(["", ""]);
+
+  const updateNode = (i, val) => setNodes(nodes.map((n, idx) => (idx === i ? val : n)));
+  const addNode = () => nodes.length < 8 && setNodes([...nodes, ""]);
+  const removeNode = (i) => setNodes(nodes.filter((_, idx) => idx !== i));
+
+  const filled = nodes.map((n) => n.trim()).filter(Boolean);
+  const canSave = heading.trim() && filled.length > 0;
+
+  const buildSvg = () => {
+    const w = 900, h = 480;
+    const cx = w / 2, cy = h / 2;
+    const r = filled.length > 0 ? 190 : 0;
+    let lines = "";
+    let nodeEls = "";
+    filled.forEach((text, i) => {
+      const angle = (2 * Math.PI * i) / filled.length - Math.PI / 2;
+      const x = cx + r * Math.cos(angle);
+      const y = cy + r * Math.sin(angle);
+      lines += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#94a3b8" stroke-width="2.5" />`;
+      const label = escapeXml(text.slice(0, 22));
+      nodeEls += `
+        <rect x="${x - 78}" y="${y - 24}" width="156" height="48" rx="10" fill="#eff6ff" stroke="#1e3a8a" stroke-width="1.5" />
+        <text x="${x}" y="${y + 5}" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#1e3a8a">${label}</text>
+      `;
+    });
+    const headingLabel = escapeXml((heading.trim() || "Topic").slice(0, 26));
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+      <rect width="${w}" height="${h}" fill="#ffffff" />
+      ${lines}
+      <rect x="${cx - 115}" y="${cy - 30}" width="230" height="60" rx="14" fill="#1e3a8a" />
+      <text x="${cx}" y="${cy + 7}" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="bold" fill="#ffffff">${headingLabel}</text>
+      ${nodeEls}
+    </svg>`;
+  };
+
+  const save = () => {
+    const svgStr = buildSvg();
+    const blob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 900;
+      canvas.height = 480;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      onSave(canvas.toDataURL("image/png"));
+    };
+    img.src = url;
+  };
+
+  return (
+    <div className="space-y-3">
+      <input
+        value={heading}
+        onChange={(e) => setHeading(e.target.value)}
+        placeholder="Central idea (e.g. Photosynthesis)"
+        className={inputCls}
+      />
+      <div className="space-y-2">
+        {nodes.map((n, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <input
+              value={n}
+              onChange={(e) => updateNode(i, e.target.value)}
+              placeholder={`Branch ${i + 1}`}
+              className={inputCls}
+            />
+            {nodes.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeNode(i)}
+                className="p-2.5 min-h-11 min-w-11 flex items-center justify-center text-slate-400 hover:text-rose-500 shrink-0"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {nodes.length < 8 && (
+        <button
+          type="button"
+          onClick={addNode}
+          className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-blue-800 hover:text-blue-900"
+        >
+          <Plus size={14} /> Add branch
+        </button>
+      )}
+
+      <div className="border border-slate-200 rounded-lg bg-white overflow-hidden">
+        <div dangerouslySetInnerHTML={{ __html: buildSvg() }} />
+      </div>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={!canSave}
+        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30"
+      >
+        <Compass size={14} /> Save mind map to log
+      </button>
+    </div>
+  );
+}
+
+function EntryForm({ initial, onSave, onCancel, submitLabel = "Log entry" }) {
+  const [entry, setEntry] = useState(initial);
+  const [sketchTab, setSketchTab] = useState("draw");
+  const set = (k) => (e) => setEntry({ ...entry, [k]: e.target.value });
+  const cps = checkpoints(entry);
+  const doneCount = cps.filter((c) => c.done).length;
+  const preview = scoreEntry(entry);
+
+  const onImage = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 1_500_000) {
+      alert("For this prototype, please use a photo under 1.5MB (compress or crop it first).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => setEntry({ ...entry, sketchImage: reader.result });
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="space-y-4 bg-white border border-slate-200 rounded-lg p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Anchor size={14} className="text-slate-400" />
+          <p className="text-xs text-slate-400">Voyage progress: {doneCount}/{cps.length} waypoints</p>
+        </div>
+        <input
+          type="date"
+          value={entry.date}
+          onChange={set("date")}
+          className="text-base sm:text-xs px-2.5 py-2 min-h-11 rounded-lg border border-slate-300 text-slate-500"
+        />
+      </div>
+      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden -mt-2">
+        <div className="h-full bg-blue-900 transition-all duration-300" style={{ width: `${(doneCount / cps.length) * 100}%` }} />
+      </div>
+
+      <Field label="1. Passenger briefing — explain it like you're announcing it on deck" done={cps[0].done} icon={Ship}>
+        <textarea rows={2} value={entry.eli10} onChange={set("eli10")} placeholder="Plants are like tiny solar-powered factories..." className={inputCls} />
+      </Field>
+
+      <Field label="2. Engine room report — why does it happen?" done={cps[1].done} icon={Fuel}>
+        <textarea rows={2} value={entry.why} onChange={set("why")} placeholder="Because..." className={inputCls} />
+      </Field>
+
+      <Field label="3. Ports of call" hint="One stop per line — shown as your route." done={cps[2].done} icon={Navigation}>
+        <textarea rows={3} value={entry.steps} onChange={set("steps")} placeholder={"Sunlight\nLeaf\nChlorophyll\nGlucose"} className={inputCls} />
+      </Field>
+
+      <Field label="4. Sightings — where do you spot this in the real world?" done={cps[3].done} icon={LifeBuoy}>
+        <textarea rows={2} value={entry.example} onChange={set("example")} placeholder="Solar panels copy plants..." className={inputCls} />
+      </Field>
+
+      <Field label="5. SOS / all clear — the common mistake, resolved" done={cps[4].done} icon={Radio}>
+        <div className="grid grid-cols-1 gap-2">
+          <input value={entry.bug} onChange={set("bug")} placeholder="SOS: what people get wrong" className={inputCls} />
+          <input value={entry.fix} onChange={set("fix")} placeholder="All clear: what's actually true" className={inputCls} />
+        </div>
+      </Field>
+
+      <Field label="6. Chart the course — draw it from memory" done={cps[5].done} icon={Compass}>
+        <div className="space-y-2">
+          <textarea rows={2} value={entry.sketchNote} onChange={set("sketchNote")} placeholder="Notes about your sketch, or list what you drew" className={inputCls} />
+          {entry.sketchImage ? (
+            <div className="relative inline-block">
+              <img src={entry.sketchImage} alt="sketch" className="max-h-56 rounded-md border border-slate-200" />
+              <button onClick={() => setEntry({ ...entry, sketchImage: null })} className="absolute -top-3 -right-3 bg-white border border-slate-300 rounded-full p-2.5 shadow-sm">
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex bg-slate-100 rounded-lg p-1 gap-1 w-fit flex-wrap">
+                <button type="button" onClick={() => setSketchTab("draw")} className={`text-xs px-3 py-2 min-h-9 rounded-md font-medium transition ${sketchTab === "draw" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"}`}>
+                  Draw
+                </button>
+                <button type="button" onClick={() => setSketchTab("mindmap")} className={`text-xs px-3 py-2 min-h-9 rounded-md font-medium transition ${sketchTab === "mindmap" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"}`}>
+                  Mind map
+                </button>
+                <button type="button" onClick={() => setSketchTab("upload")} className={`text-xs px-3 py-2 min-h-9 rounded-md font-medium transition ${sketchTab === "upload" ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"}`}>
+                  Upload photo
+                </button>
+              </div>
+              {sketchTab === "draw" && (
+                <SketchCanvas onSave={(dataUrl) => setEntry({ ...entry, sketchImage: dataUrl })} />
+              )}
+              {sketchTab === "mindmap" && (
+                <MindMapEditor onSave={(dataUrl) => setEntry({ ...entry, sketchImage: dataUrl })} />
+              )}
+              {sketchTab === "upload" && (
+                <label className="flex items-center justify-center gap-2 border border-dashed border-slate-300 rounded-lg py-6 text-xs text-slate-400 cursor-pointer hover:border-blue-800 hover:text-blue-900">
+                  <ImageIcon size={16} /> Upload a photo of your chart (+{CHART_BONUS_COAL} bonus coal)
+                  <input type="file" accept="image/*" className="hidden" onChange={onImage} />
+                </label>
+              )}
+            </>
+          )}
+        </div>
+      </Field>
+
+      <Field label="7. Messages in a bottle — three questions still adrift" done={cps[6].done} icon={Waves}>
+        <div className="space-y-2">
+          <input value={entry.q1} onChange={set("q1")} placeholder="Question 1" className={inputCls} />
+          <input value={entry.q2} onChange={set("q2")} placeholder="Question 2" className={inputCls} />
+          <input value={entry.q3} onChange={set("q3")} placeholder="Question 3" className={inputCls} />
+        </div>
+      </Field>
+
+      <Field label="8. Ship's manifest — sum it up in one line" done={cps[7].done} icon={Flag}>
+        <input value={entry.summary} onChange={set("summary")} placeholder="Sum it up in one line" className={inputCls} />
+      </Field>
+
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <div className="flex items-center gap-3 text-xs text-slate-500">
+          <span className="flex items-center gap-1"><Navigation size={12} className="text-blue-900" /> +{preview.miles} mi</span>
+          <span className="flex items-center gap-1"><Fuel size={12} className="text-amber-500" /> +{preview.coal}</span>
+          <StarRow stars={preview.stars} />
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onCancel} className="text-sm px-4 py-2.5 min-h-11 rounded-lg text-slate-500 hover:bg-slate-100">
+            Cancel
+          </button>
+          <button onClick={() => onSave(entry)} className="text-sm px-5 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white hover:bg-blue-900 flex items-center gap-1.5">
+            <Anchor size={14} /> {submitLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SectionHeading({ icon: Icon, children }) {
+  return (
+    <div className="flex items-center gap-2 mb-1">
+      <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-900 shrink-0">
+        <Icon size={15} />
+      </span>
+      <p className="text-sm sm:text-base font-semibold text-slate-700">{children}</p>
+    </div>
+  );
+}
+
+function EntryCard({ entry, topicName, onEdit, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const stepList = entry.steps ? entry.steps.split("\n").filter(Boolean) : [];
+  const score = entry.milesEarned != null ? entry : { ...entry, ...scoreEntry(entry) };
+
+  const handleDownload = (e) => {
+    e.stopPropagation();
+    const text = entryToText(entry, topicName);
+    const safeName = (topicName || "entry").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    downloadTextFile(`${safeName}-${entry.date}.txt`, text);
+  };
+
+  const handleCopy = async (e) => {
+    e.stopPropagation();
+    const text = entryToText(entry, topicName);
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    } catch (err) {
+      console.error("copy failed", err);
+    }
+  };
+
+  return (
+    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-3 py-3.5 min-h-11 text-left hover:bg-slate-50">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-slate-400">{entry.date}</p>
+            <StarRow stars={score.stars ?? 0} size={11} />
+          </div>
+          <p className="text-sm text-slate-700 truncate">{entry.summary || "(no manifest yet)"}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-blue-900 font-medium flex items-center gap-0.5"><Navigation size={11} />{score.milesEarned}mi</span>
+          {open ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
+        </div>
+      </button>
+      {open && (
+        <div className="px-3 pb-4 pt-1 space-y-3 border-t border-slate-100 text-sm">
+          {entry.eli10 && (<div><SectionHeading icon={Ship}>Passenger briefing</SectionHeading><p className="text-slate-700 ml-9">{entry.eli10}</p></div>)}
+          {entry.why && (<div><SectionHeading icon={Fuel}>Engine room report</SectionHeading><p className="text-slate-700 ml-9">{entry.why}</p></div>)}
+          {stepList.length > 0 && (
+            <div>
+              <SectionHeading icon={Navigation}>Ports of call</SectionHeading>
+              <div className="flex flex-wrap items-center gap-1.5 ml-9">
+                {stepList.map((s, i) => (
+                  <React.Fragment key={i}>
+                    <span className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">{s}</span>
+                    {i < stepList.length - 1 && <span className="text-slate-300">→</span>}
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
+          {entry.example && (<div><SectionHeading icon={LifeBuoy}>Sightings</SectionHeading><p className="text-slate-700 ml-9">{entry.example}</p></div>)}
+          {(entry.bug || entry.fix) && (
+            <div>
+              <SectionHeading icon={Radio}>SOS / all clear</SectionHeading>
+              <div className="ml-9 space-y-0.5">
+                {entry.bug && <p className="text-rose-600 text-sm">SOS: {entry.bug}</p>}
+                {entry.fix && <p className="text-emerald-700 text-sm">All clear: {entry.fix}</p>}
+              </div>
+            </div>
+          )}
+          {entry.sketchImage && (<div><SectionHeading icon={Compass}>Chart the course</SectionHeading><img src={entry.sketchImage} alt="sketch" className="max-h-48 rounded-md border border-slate-200 ml-9" /></div>)}
+          {entry.sketchNote && <p className="text-slate-600 text-xs italic ml-9">{entry.sketchNote}</p>}
+          {(entry.q1 || entry.q2 || entry.q3) && (
+            <div>
+              <SectionHeading icon={Waves}>Messages in a bottle</SectionHeading>
+              <ul className="list-disc list-inside text-slate-700 space-y-0.5 ml-9">
+                {[entry.q1, entry.q2, entry.q3].filter(Boolean).map((q, i) => <li key={i}>{q}</li>)}
+              </ul>
+            </div>
+          )}
+          <div className="pt-2 border-t border-slate-100 space-y-2">
+            <div className="flex items-center gap-3 text-xs text-slate-400">
+              <span className="flex items-center gap-1"><Navigation size={11} className="text-blue-900" />{score.milesEarned} mi</span>
+              <span className="flex items-center gap-1"><Fuel size={11} className="text-amber-500" />{score.coalEarned}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+                {copied ? <CheckIcon size={13} className="text-emerald-600" /> : <Copy size={13} />}
+                {copied ? "Copied" : "Copy text"}
+              </button>
+              <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+                <Download size={13} /> Download .txt
+              </button>
+              <button onClick={onEdit} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+                <Pencil size={13} /> Edit
+              </button>
+              <button onClick={onDelete} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50">
+                <Trash2 size={13} /> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FeynmanNotebook() {
+  const [topics, saveTopics, topicsLoaded] = useStorage("notebook-topics", SEED_TOPICS);
+  const [entries, saveEntries, entriesLoaded] = useStorage("notebook-entries", SEED_ENTRIES);
+  const [ledger, saveLedger, ledgerLoaded] = useStorage("notebook-ledger", SEED_LEDGER);
+
+  const [viewFilter, setViewFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [activeTopicId, setActiveTopicId] = useState(null);
+  const [addingTopic, setAddingTopic] = useState(false);
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [justPromoted, setJustPromoted] = useState(false);
+
+  useEffect(() => {
+    if (topicsLoaded && !activeTopicId && topics.length > 0) setActiveTopicId(topics[0].id);
+  }, [topicsLoaded, topics, activeTopicId]);
+
+  // totals only ever go up — edits and deletions never take miles/coal/stars away,
+  // so the app rewards showing up rather than punishing changes of mind.
+  const totals = { miles: ledger.totalMiles || 0, coal: ledger.totalCoal || 0, stars: ledger.totalStars || 0 };
+
+  const filteredTopics = useMemo(() => {
+    return topics.filter((t) => {
+      if (viewFilter !== "all" && !t.viewTags.includes(viewFilter)) return false;
+      if (search && !t.name.toLowerCase().includes(search.toLowerCase())) return false;
+      return true;
+    });
+  }, [topics, viewFilter, search]);
+
+  const activeTopic = topics.find((t) => t.id === activeTopicId);
+  const topicEntries = entries
+    .filter((e) => e.topicId === activeTopicId)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const createTopic = async (topic) => {
+    await saveTopics([topic, ...topics]);
+    setActiveTopicId(topic.id);
+    setAddingTopic(false);
+  };
+
+  const deleteTopic = async (id) => {
+    if (!confirm("Scuttle this voyage and all its log entries?")) return;
+    await saveTopics(topics.filter((t) => t.id !== id));
+    await saveEntries(entries.filter((e) => e.topicId !== id));
+    if (activeTopicId === id) setActiveTopicId(null);
+    // Note: ledger totals (miles/coal/stars) are intentionally left untouched —
+    // progress already earned isn't taken back by deleting a voyage.
+  };
+
+  const saveNewEntry = async (entry) => {
+    const score = scoreEntry(entry);
+    const prevLevel = rankFromMiles(totals.miles).level;
+    const nextLevel = rankFromMiles(totals.miles + score.miles).level;
+    const enriched = { ...entry, topicId: activeTopicId, milesEarned: score.miles, coalEarned: score.coal, starsEarned: score.stars };
+    await saveEntries([enriched, ...entries]);
+    await saveLedger({
+      totalMiles: (ledger.totalMiles || 0) + score.miles,
+      totalCoal: (ledger.totalCoal || 0) + score.coal,
+      totalStars: (ledger.totalStars || 0) + score.stars,
+      topicStars: { ...ledger.topicStars, [activeTopicId]: (ledger.topicStars?.[activeTopicId] || 0) + score.stars },
+    });
+    setAddingEntry(false);
+    if (nextLevel > prevLevel) {
+      setJustPromoted(true);
+      setTimeout(() => setJustPromoted(false), 2500);
+    }
+  };
+
+  const updateEntry = async (entry) => {
+    const original = entries.find((e) => e.id === entry.id) || {};
+    const oldMiles = original.milesEarned || 0;
+    const oldCoal = original.coalEarned || 0;
+    const oldStars = original.starsEarned || 0;
+    const freshScore = scoreEntry(entry);
+    // an edit can only ever earn more than what the entry already had — never less.
+    const finalMiles = Math.max(freshScore.miles, oldMiles);
+    const finalCoal = Math.max(freshScore.coal, oldCoal);
+    const finalStars = Math.max(freshScore.stars, oldStars);
+    const deltaMiles = finalMiles - oldMiles;
+    const deltaCoal = finalCoal - oldCoal;
+    const deltaStars = finalStars - oldStars;
+
+    const enriched = { ...entry, milesEarned: finalMiles, coalEarned: finalCoal, starsEarned: finalStars };
+    await saveEntries(entries.map((e) => (e.id === enriched.id ? enriched : e)));
+
+    if (deltaMiles > 0 || deltaCoal > 0 || deltaStars > 0) {
+      const prevLevel = rankFromMiles(totals.miles).level;
+      const nextLevel = rankFromMiles(totals.miles + deltaMiles).level;
+      await saveLedger({
+        totalMiles: (ledger.totalMiles || 0) + deltaMiles,
+        totalCoal: (ledger.totalCoal || 0) + deltaCoal,
+        totalStars: (ledger.totalStars || 0) + deltaStars,
+        topicStars: { ...ledger.topicStars, [entry.topicId]: (ledger.topicStars?.[entry.topicId] || 0) + deltaStars },
+      });
+      if (nextLevel > prevLevel) {
+        setJustPromoted(true);
+        setTimeout(() => setJustPromoted(false), 2500);
+      }
+    }
+    setEditingEntryId(null);
+  };
+
+  const deleteEntry = async (entryId) => {
+    if (!confirm("Delete this log entry? This can't be undone.")) return;
+    await saveEntries(entries.filter((e) => e.id !== entryId));
+    if (editingEntryId === entryId) setEditingEntryId(null);
+    // Note: ledger totals are intentionally left untouched — miles, coal, and
+    // stars already earned stay earned, even if the entry itself is removed.
+  };
+
+  const toggleTopicTag = async (topicId, group, tagId) => {
+    const next = topics.map((t) => {
+      if (t.id !== topicId) return t;
+      const list = t[group];
+      return { ...t, [group]: list.includes(tagId) ? list.filter((x) => x !== tagId) : [...list, tagId] };
+    });
+    await saveTopics(next);
+  };
+
+  if (!topicsLoaded || !entriesLoaded || !ledgerLoaded) {
+    return <div className="p-8 text-sm text-slate-400 flex items-center gap-2"><Ship size={16} className="animate-pulse" /> Casting off…</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="flex items-center gap-2 mb-1">
+          <Ship size={18} className="text-blue-900" />
+          <h1 className="text-lg font-semibold">J.J.'s Ship Log</h1>
+        </div>
+        <p className="text-sm text-slate-400 mb-4">Log what you've learned, sail more miles, rise through the ranks</p>
+
+        <Hud totalMiles={totals.miles} totalCoal={totals.coal} totalStars={totals.stars} justPromoted={justPromoted} />
+
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar */}
+          <div className="w-full lg:w-64 lg:shrink-0 space-y-3">
+            <div className="flex bg-slate-100 rounded-lg p-1 gap-1">
+              {[
+                { id: "all", label: "All" },
+                { id: "school", label: "YBIP" },
+                { id: "explore", label: "Curious" },
+              ].map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setViewFilter(v.id)}
+                  className={`flex-1 text-xs py-2.5 min-h-11 rounded-md font-medium transition ${
+                    viewFilter === v.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"
+                  }`}
+                >
+                  {v.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="relative">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search voyages"
+                className="w-full text-base sm:text-sm pl-9 pr-3 py-2.5 min-h-11 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-800"
+              />
+            </div>
+
+            <div className="space-y-1">
+              {filteredTopics.map((t) => {
+                const tStars = ledger.topicStars?.[t.id] || 0;
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => { setActiveTopicId(t.id); setAddingEntry(false); }}
+                    className={`w-full text-left px-3 py-3 min-h-11 rounded-lg text-sm transition ${
+                      activeTopicId === t.id ? "bg-white border border-slate-200 shadow-sm" : "hover:bg-slate-100"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`truncate ${activeTopicId === t.id ? "font-medium text-slate-900" : "text-slate-600"}`}>{t.name}</p>
+                      {tStars > 0 && <span className="text-xs text-amber-500 flex items-center gap-0.5 shrink-0"><Star size={10} className="fill-amber-400" />{tStars}</span>}
+                    </div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {t.viewTags.map((vt) => {
+                        const v = VIEW_TAGS.find((x) => x.id === vt);
+                        return v ? <Chip key={vt} className={v.color}>{v.label}</Chip> : null;
+                      })}
+                      {t.examTags.map((et) => {
+                        const e = EXAM_TAGS.find((x) => x.id === et);
+                        return e ? <Chip key={et} className={e.color}>{e.label}</Chip> : null;
+                      })}
+                    </div>
+                  </button>
+                );
+              })}
+              {filteredTopics.length === 0 && (
+                <p className="text-xs text-slate-400 px-2 py-3">No voyages match.</p>
+              )}
+            </div>
+
+            {addingTopic ? (
+              <NewTopicForm onCancel={() => setAddingTopic(false)} onCreate={createTopic} />
+            ) : (
+              <button
+                onClick={() => setAddingTopic(true)}
+                className="w-full flex items-center justify-center gap-1.5 text-sm py-3 min-h-11 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-blue-800 hover:text-blue-900"
+              >
+                <Plus size={15} /> New voyage
+              </button>
+            )}
+          </div>
+
+          {/* Main */}
+          <div className="flex-1 min-w-0">
+            {!activeTopic ? (
+              <div className="text-sm text-slate-400 py-12 text-center">Pick or chart a voyage to set sail.</div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">{activeTopic.name}</h2>
+                    <p className="text-sm text-slate-400">{activeTopic.subject} · {topicEntries.length} {topicEntries.length === 1 ? "log entry" : "log entries"}</p>
+                  </div>
+                  <button onClick={() => deleteTopic(activeTopic.id)} className="text-slate-300 hover:text-rose-500 p-2.5 min-h-11 min-w-11 flex items-center justify-center">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {VIEW_TAGS.map((v) => (
+                    <TagToggle key={v.id} active={activeTopic.viewTags.includes(v.id)} className={v.color} onClick={() => toggleTopicTag(activeTopic.id, "viewTags", v.id)}>
+                      <v.icon size={12} /> {v.label}
+                    </TagToggle>
+                  ))}
+                  {EXAM_TAGS.map((t) => (
+                    <TagToggle key={t.id} active={activeTopic.examTags.includes(t.id)} className={t.color} onClick={() => toggleTopicTag(activeTopic.id, "examTags", t.id)}>
+                      {t.label}
+                    </TagToggle>
+                  ))}
+                </div>
+
+                {addingEntry ? (
+                  <EntryForm initial={emptyEntry()} onCancel={() => setAddingEntry(false)} onSave={saveNewEntry} />
+                ) : (
+                  <button
+                    onClick={() => { setAddingEntry(true); setEditingEntryId(null); }}
+                    className="flex items-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white hover:bg-blue-900"
+                  >
+                    <Plus size={15} /> Log new entry
+                  </button>
+                )}
+
+                <div className="space-y-2 pt-2">
+                  {topicEntries.length === 0 && !addingEntry && (
+                    <p className="text-sm text-slate-400 py-6 text-center">No log entries yet — write your first one above.</p>
+                  )}
+                  {topicEntries.map((entry) =>
+                    editingEntryId === entry.id ? (
+                      <EntryForm
+                        key={entry.id}
+                        initial={entry}
+                        submitLabel="Save changes"
+                        onCancel={() => setEditingEntryId(null)}
+                        onSave={updateEntry}
+                      />
+                    ) : (
+                      <EntryCard
+                        key={entry.id}
+                        entry={entry}
+                        topicName={activeTopic.name}
+                        onEdit={() => { setEditingEntryId(entry.id); setAddingEntry(false); }}
+                        onDelete={() => deleteEntry(entry.id)}
+                      />
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<FeynmanNotebook />);
+
+</script>
+
+<script>
+(function () {
+  function showError(message) {
+    var el = document.getElementById("root");
+    if (el) {
+      el.innerHTML = '<div style="padding:2rem; font-family: system-ui, sans-serif; color: #b91c1c; font-size: 13px; max-width: 560px; white-space: pre-wrap;">' +
+        message + '</div>';
+    }
+  }
+
+  window.addEventListener("load", function () {
+    setTimeout(function () {
+      if (typeof React === "undefined" || typeof ReactDOM === "undefined" || typeof Babel === "undefined") {
+        showError("Could not load required scripts from cdnjs.cloudflare.com. Check your internet connection, or that this network/browser is not blocking cdnjs.cloudflare.com, then reload the page.");
+      }
+    }, 4000);
+  });
+
+  try {
+    var source = document.getElementById("app-source").textContent;
+    var compiled = Babel.transform(source, {
+      presets: [["react", { runtime: "classic" }]],
+      filename: "app.jsx"
+    }).code;
+    var script = document.createElement("script");
+    script.textContent = compiled;
+    document.body.appendChild(script);
+  } catch (err) {
+    showError("Failed to start the app:\n\n" + (err && err.message ? err.message : err));
+    console.error(err);
+  }
+})();
+</script>
+</body>
+</html>
