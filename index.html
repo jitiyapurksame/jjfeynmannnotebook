@@ -94,6 +94,10 @@ const BONUS_ALL_MILES = 30;
 const BONUS_ALL_COAL = 20;
 const CHART_BONUS_COAL = 10;
 
+// Paste the "Web app" URL you get after deploying the Google Apps Script (see setup guide).
+// Leave as-is (empty string) and the app will just use on-device storage, like before.
+const API_URL = "https://script.google.com/macros/s/AKfycbwV1COt1YezTfRC7Q7plUMFpVYVp3ItzLiVw-8fRqg35XbvDEUVAxMnTl7FqFI8voFF/exec";
+
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const emptyEntry = () => ({
@@ -123,15 +127,34 @@ const SEED_TOPICS = [
 function useStorage(key, fallback) {
   const [value, setValue] = useState(fallback);
   const [loaded, setLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
   useEffect(() => {
+    // 1. Show something instantly from the on-device cache.
     try {
       const raw = localStorage.getItem(key);
       if (raw !== null) setValue(JSON.parse(raw));
     } catch (e) {
       // key doesn't exist yet or failed to parse
-    } finally {
-      setLoaded(true);
     }
+
+    // 2. If a cloud API is configured, fetch the latest version and prefer it.
+    if (!API_URL) {
+      setLoaded(true);
+      return;
+    }
+    fetch(`${API_URL}?key=${encodeURIComponent(key)}`)
+      .then((r) => r.json())
+      .then((remote) => {
+        if (remote !== null && remote !== undefined) {
+          setValue(remote);
+          localStorage.setItem(key, JSON.stringify(remote));
+        }
+      })
+      .catch((e) => {
+        console.error("cloud load failed, using on-device copy", e);
+      })
+      .finally(() => setLoaded(true));
   }, [key]);
 
   const persist = async (next) => {
@@ -140,6 +163,20 @@ function useStorage(key, fallback) {
       localStorage.setItem(key, JSON.stringify(next));
     } catch (e) {
       console.error("storage save failed", e);
+    }
+    if (!API_URL) return;
+    setSyncing(true);
+    try {
+      // text/plain avoids a CORS preflight that Apps Script web apps don't handle.
+      await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({ key, value: next }),
+      });
+    } catch (e) {
+      console.error("cloud save failed, change is saved on this device only for now", e);
+    } finally {
+      setSyncing(false);
     }
   };
 
