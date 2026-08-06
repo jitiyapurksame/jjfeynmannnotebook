@@ -98,6 +98,44 @@ const CHART_BONUS_COAL = 10;
 // Leave as-is (empty string) and the app will just use on-device storage, like before.
 const API_URL = "https://script.google.com/macros/s/AKfycbwV1COt1YezTfRC7Q7plUMFpVYVp3ItzLiVw-8fRqg35XbvDEUVAxMnTl7FqFI8voFF/exec";
 
+// Loads data from the Apps Script backend via a <script> tag instead of fetch().
+// This sidesteps a CORS quirk in Google's redirect that blocks fetch() from
+// reading the response, even though the URL is genuinely public.
+let jsonpCounter = 0;
+function jsonpFetch(url, timeoutMs = 10000) {
+  return new Promise((resolve, reject) => {
+    const callbackName = `__shipLogCb_${Date.now()}_${jsonpCounter++}`;
+    const script = document.createElement("script");
+    let done = false;
+
+    const cleanup = () => {
+      done = true;
+      delete window[callbackName];
+      script.remove();
+      clearTimeout(timer);
+    };
+    const timer = setTimeout(() => {
+      if (!done) {
+        cleanup();
+        reject(new Error("cloud request timed out"));
+      }
+    }, timeoutMs);
+
+    window[callbackName] = (data) => {
+      if (done) return;
+      cleanup();
+      resolve(data);
+    };
+    script.onerror = () => {
+      if (done) return;
+      cleanup();
+      reject(new Error("cloud request failed to load"));
+    };
+    script.src = `${url}${url.includes("?") ? "&" : "?"}callback=${callbackName}`;
+    document.body.appendChild(script);
+  });
+}
+
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const emptyEntry = () => ({
@@ -143,8 +181,7 @@ function useStorage(key, fallback) {
       setLoaded(true);
       return;
     }
-    fetch(`${API_URL}?key=${encodeURIComponent(key)}`)
-      .then((r) => r.json())
+    jsonpFetch(`${API_URL}?key=${encodeURIComponent(key)}`)
       .then((remote) => {
         if (remote !== null && remote !== undefined) {
           setValue(remote);
@@ -167,9 +204,12 @@ function useStorage(key, fallback) {
     if (!API_URL) return;
     setSyncing(true);
     try {
-      // text/plain avoids a CORS preflight that Apps Script web apps don't handle.
+      // "no-cors" sends the write to the sheet even though we can't read the
+      // (also CORS-blocked) response back. text/plain avoids a preflight
+      // that Apps Script web apps don't handle.
       await fetch(API_URL, {
         method: "POST",
+        mode: "no-cors",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: JSON.stringify({ key, value: next }),
       });
