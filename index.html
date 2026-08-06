@@ -94,48 +94,6 @@ const BONUS_ALL_MILES = 30;
 const BONUS_ALL_COAL = 20;
 const CHART_BONUS_COAL = 10;
 
-// Paste the "Web app" URL you get after deploying the Google Apps Script (see setup guide).
-// Leave as-is (empty string) and the app will just use on-device storage, like before.
-const API_URL = "https://script.google.com/macros/s/AKfycbwV1COt1YezTfRC7Q7plUMFpVYVp3ItzLiVw-8fRqg35XbvDEUVAxMnTl7FqFI8voFF/exec";
-
-// Loads data from the Apps Script backend via a <script> tag instead of fetch().
-// This sidesteps a CORS quirk in Google's redirect that blocks fetch() from
-// reading the response, even though the URL is genuinely public.
-let jsonpCounter = 0;
-function jsonpFetch(url, timeoutMs = 10000) {
-  return new Promise((resolve, reject) => {
-    const callbackName = `__shipLogCb_${Date.now()}_${jsonpCounter++}`;
-    const script = document.createElement("script");
-    let done = false;
-
-    const cleanup = () => {
-      done = true;
-      delete window[callbackName];
-      script.remove();
-      clearTimeout(timer);
-    };
-    const timer = setTimeout(() => {
-      if (!done) {
-        cleanup();
-        reject(new Error("cloud request timed out"));
-      }
-    }, timeoutMs);
-
-    window[callbackName] = (data) => {
-      if (done) return;
-      cleanup();
-      resolve(data);
-    };
-    script.onerror = () => {
-      if (done) return;
-      cleanup();
-      reject(new Error("cloud request failed to load"));
-    };
-    script.src = `${url}${url.includes("?") ? "&" : "?"}callback=${callbackName}`;
-    document.body.appendChild(script);
-  });
-}
-
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const emptyEntry = () => ({
@@ -165,33 +123,15 @@ const SEED_TOPICS = [
 function useStorage(key, fallback) {
   const [value, setValue] = useState(fallback);
   const [loaded, setLoaded] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-
   useEffect(() => {
-    // 1. Show something instantly from the on-device cache.
     try {
       const raw = localStorage.getItem(key);
       if (raw !== null) setValue(JSON.parse(raw));
     } catch (e) {
       // key doesn't exist yet or failed to parse
-    }
-
-    // 2. If a cloud API is configured, fetch the latest version and prefer it.
-    if (!API_URL) {
+    } finally {
       setLoaded(true);
-      return;
     }
-    jsonpFetch(`${API_URL}?key=${encodeURIComponent(key)}`)
-      .then((remote) => {
-        if (remote !== null && remote !== undefined) {
-          setValue(remote);
-          localStorage.setItem(key, JSON.stringify(remote));
-        }
-      })
-      .catch((e) => {
-        console.error("cloud load failed, using on-device copy", e);
-      })
-      .finally(() => setLoaded(true));
   }, [key]);
 
   const persist = async (next) => {
@@ -200,23 +140,6 @@ function useStorage(key, fallback) {
       localStorage.setItem(key, JSON.stringify(next));
     } catch (e) {
       console.error("storage save failed", e);
-    }
-    if (!API_URL) return;
-    setSyncing(true);
-    try {
-      // "no-cors" sends the write to the sheet even though we can't read the
-      // (also CORS-blocked) response back. text/plain avoids a preflight
-      // that Apps Script web apps don't handle.
-      await fetch(API_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify({ key, value: next }),
-      });
-    } catch (e) {
-      console.error("cloud save failed, change is saved on this device only for now", e);
-    } finally {
-      setSyncing(false);
     }
   };
 
@@ -1004,6 +927,37 @@ function FeynmanNotebook() {
   const [addingEntry, setAddingEntry] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState(null);
   const [justPromoted, setJustPromoted] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const exportBackup = () => {
+    const payload = { exportedAt: new Date().toISOString(), topics, entries, ledger };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ship-log-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importBackup = async (file) => {
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      if (!payload.topics || !payload.entries || !payload.ledger) {
+        alert("This doesn't look like a Ship Log backup file.");
+        return;
+      }
+      if (!confirm("Replace all data on this device with this backup? This can't be undone.")) return;
+      await saveTopics(payload.topics);
+      await saveEntries(payload.entries);
+      await saveLedger(payload.ledger);
+      setActiveTopicId(payload.topics[0]?.id || null);
+    } catch (e) {
+      alert("Couldn't read that file — make sure it's a Ship Log backup .json file.");
+    }
+  };
 
   useEffect(() => {
     if (topicsLoaded && !activeTopicId && topics.length > 0) setActiveTopicId(topics[0].id);
@@ -1118,9 +1072,37 @@ function FeynmanNotebook() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center gap-2 mb-1">
-          <Ship size={18} className="text-blue-900" />
-          <h1 className="text-lg font-semibold">J.J.'s Ship Log</h1>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <div className="flex items-center gap-2">
+            <Ship size={18} className="text-blue-900" />
+            <h1 className="text-lg font-semibold">J.J.'s Ship Log</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportBackup}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-11 rounded-lg border border-slate-200 text-slate-600 hover:border-blue-800 hover:text-blue-900"
+              title="Download a backup file of everything logged on this device"
+            >
+              <Download size={14} /> Export
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-11 rounded-lg border border-slate-200 text-slate-600 hover:border-blue-800 hover:text-blue-900"
+              title="Load a backup file to bring this device up to date"
+            >
+              <Copy size={14} /> Import
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(e) => {
+                importBackup(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </div>
         </div>
         <p className="text-sm text-slate-400 mb-4">Log what you've learned, sail more miles, rise through the ranks</p>
 
