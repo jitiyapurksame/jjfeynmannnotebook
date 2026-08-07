@@ -6,12 +6,40 @@
 <title>J.J.'s Ship Log</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><text y=%2220%22 font-size=%2220%22>%E2%9A%93</text></svg>" />
 <script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          mono: ["'Space Mono'", "ui-monospace", "monospace"],
+          serif: ["'Lora'", "Georgia", "serif"],
+        },
+        colors: {
+          navy: { DEFAULT: "#1c3a5c", deep: "#12283f", 950: "#0e1f33" },
+          brass: { DEFAULT: "#c9a876", deep: "#a9825a", 100: "#f3e9d6" },
+          parchment: "#faf6ee",
+        },
+      },
+    },
+  };
+</script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.26.4/babel.min.js"></script>
 <style>
-  html, body { margin: 0; padding: 0; background: #f8fafc; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0; -webkit-tap-highlight-color: transparent;
+    background-color: #faf6ee;
+    background-image:
+      linear-gradient(rgba(28,58,92,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28,58,92,0.055) 1px, transparent 1px);
+    background-size: 26px 26px;
+  }
   #root { min-height: 100vh; }
+  .rms-eyebrow { font-family: 'Space Mono', monospace; letter-spacing: 0.14em; }
 </style>
 </head>
 <body>
@@ -70,6 +98,15 @@ const CheckIcon = Check;
 const Pencil = (p) => (<IconBase {...p}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></IconBase>);
 
 const SUBJECTS = ["Biology", "Chemistry", "Physics", "Earth science", "Astronomy", "Math", "General"];
+const SUBJECT_ICONS = {
+  Biology: LifeBuoy,
+  Chemistry: Fuel,
+  Physics: Compass,
+  "Earth science": Anchor,
+  Astronomy: Navigation,
+  Math: Flag,
+  General: Ship,
+};
 const EXAM_TAGS = [
   { id: "KVIS", label: "KVIS", color: "bg-indigo-100 text-indigo-800 border-indigo-200" },
   { id: "ASEAN", label: "ASEAN scholarship", color: "bg-rose-100 text-rose-800 border-rose-200" },
@@ -278,42 +315,43 @@ function StarRow({ stars, size = 12 }) {
 function Hud({ totalMiles, totalCoal, totalStars, justPromoted }) {
   const { level, title, icon: RankIcon, pct } = rankFromMiles(totalMiles);
   return (
-    <div className="rounded-xl border border-blue-900 bg-blue-950 text-white px-4 py-3 mb-5 relative overflow-hidden">
-      <Waves size={120} className="absolute -right-4 -bottom-6 text-blue-900 opacity-40" />
+    <div className="rounded-xl border-2 border-dashed border-brass/60 bg-navy text-white px-4 py-3.5 mb-5 relative overflow-hidden">
+      <Waves size={120} className="absolute -right-4 -bottom-6 text-white/5" />
       {justPromoted && (
-        <div className="absolute inset-0 bg-amber-400/90 text-blue-950 flex items-center justify-center font-bold text-sm animate-pulse z-10">
-          PROMOTED! Now: {title}
+        <div className="absolute inset-0 bg-brass/95 text-navy-deep flex items-center justify-center font-mono font-bold text-sm animate-pulse z-10 uppercase">
+          Promoted! Now: {title}
         </div>
       )}
+      <p className="rms-eyebrow text-[10px] text-brass uppercase mb-2.5 relative">&#9202; Voyage Progress</p>
       <div className="flex items-center justify-between flex-wrap gap-3 relative">
         <div className="flex items-center gap-3">
-          <div className="relative w-11 h-11 rounded-lg bg-amber-400 flex items-center justify-center shrink-0 text-blue-950">
+          <div className="relative w-11 h-11 rounded-lg bg-brass flex items-center justify-center shrink-0 text-navy-deep">
             <RankIcon size={22} />
-            <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 min-w-[18px] min-h-[18px] px-1 rounded-full bg-blue-950 border border-amber-300 text-amber-300 text-[10px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 min-w-[18px] min-h-[18px] px-1 rounded-full bg-navy-deep border border-brass text-brass text-[10px] font-bold flex items-center justify-center">
               {level}
             </span>
           </div>
           <div>
-            <p className="text-xs text-blue-300 leading-none mb-1">Rank</p>
-            <p className="text-sm font-semibold leading-none">{title}</p>
+            <p className="rms-eyebrow text-[10px] text-blue-300 uppercase leading-none mb-1.5">Rank</p>
+            <p className="font-mono font-bold text-sm leading-none">{title}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-4 text-sm font-mono">
           <div className="flex items-center gap-1.5">
-            <Fuel size={16} className="text-amber-400" />
-            <span className="font-semibold">{totalCoal}</span>
+            <Fuel size={16} className="text-brass" />
+            <span className="font-bold">{totalCoal}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Star size={16} className="fill-amber-400 text-amber-400" />
-            <span className="font-semibold">{totalStars}</span>
+            <Star size={16} className="fill-brass text-brass" />
+            <span className="font-bold">{totalStars}</span>
           </div>
         </div>
       </div>
-      <div className="mt-2.5 relative">
-        <div className="h-2 bg-blue-900 rounded-full overflow-hidden">
-          <div className="h-full bg-amber-400 transition-all duration-500" style={{ width: `${pct}%` }} />
+      <div className="mt-3 relative">
+        <div className="h-2 bg-navy-deep rounded-full overflow-hidden">
+          <div className="h-full bg-brass transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
-        <p className="text-[10px] text-blue-300 mt-1 flex items-center gap-1"><Navigation size={10} /> {pct}% to next rank</p>
+        <p className="rms-eyebrow text-[10px] text-blue-300 mt-1.5 flex items-center gap-1 uppercase"><Navigation size={10} /> {pct}% to next rank</p>
       </div>
     </div>
   );
@@ -365,7 +403,7 @@ function NewTopicForm({ onCancel, onCreate }) {
         <button
           disabled={!name.trim()}
           onClick={() => name.trim() && onCreate({ id: uid(), name: name.trim(), subject, viewTags, examTags })}
-          className="text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30 flex items-center gap-1.5"
+          className="text-sm px-4 py-2.5 min-h-11 rounded-lg bg-navy text-white disabled:opacity-30 flex items-center gap-1.5"
         >
           <Anchor size={14} /> Chart voyage
         </button>
@@ -382,7 +420,7 @@ function Field({ label, hint, done, icon: Icon, children }) {
           <Check size={11} />
         </span>
         {Icon && (
-          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-900 shrink-0">
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-brass-100 text-navy-deep shrink-0">
             <Icon size={17} />
           </span>
         )}
@@ -539,7 +577,7 @@ function SketchCanvas({ onSave }) {
         type="button"
         onClick={() => onSave(canvasRef.current.toDataURL("image/png"))}
         disabled={!hasContent}
-        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30"
+        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-navy text-white disabled:opacity-30"
       >
         <Compass size={14} /> Save sketch to log
       </button>
@@ -646,7 +684,7 @@ function MindMapEditor({ onSave }) {
         <button
           type="button"
           onClick={addNode}
-          className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-blue-800 hover:text-blue-900"
+          className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-navy hover:text-navy"
         >
           <Plus size={14} /> Add branch
         </button>
@@ -660,7 +698,7 @@ function MindMapEditor({ onSave }) {
         type="button"
         onClick={save}
         disabled={!canSave}
-        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white disabled:opacity-30"
+        className="w-full flex items-center justify-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-navy text-white disabled:opacity-30"
       >
         <Compass size={14} /> Save mind map to log
       </button>
@@ -759,7 +797,7 @@ function EntryForm({ initial, onSave, onCancel, submitLabel = "Log entry" }) {
                 <MindMapEditor onSave={(dataUrl) => setEntry({ ...entry, sketchImage: dataUrl })} />
               )}
               {sketchTab === "upload" && (
-                <label className="flex items-center justify-center gap-2 border border-dashed border-slate-300 rounded-lg py-6 text-xs text-slate-400 cursor-pointer hover:border-blue-800 hover:text-blue-900">
+                <label className="flex items-center justify-center gap-2 border border-dashed border-slate-300 rounded-lg py-6 text-xs text-slate-400 cursor-pointer hover:border-navy hover:text-navy">
                   <ImageIcon size={16} /> Upload a photo of your chart (+{CHART_BONUS_COAL} bonus coal)
                   <input type="file" accept="image/*" className="hidden" onChange={onImage} />
                 </label>
@@ -783,7 +821,7 @@ function EntryForm({ initial, onSave, onCancel, submitLabel = "Log entry" }) {
 
       <div className="flex items-center justify-between pt-2 border-t border-slate-100">
         <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="flex items-center gap-1"><Navigation size={12} className="text-blue-900" /> +{preview.miles} mi</span>
+          <span className="flex items-center gap-1"><Navigation size={12} className="text-navy-deep" /> +{preview.miles} mi</span>
           <span className="flex items-center gap-1"><Fuel size={12} className="text-amber-500" /> +{preview.coal}</span>
           <StarRow stars={preview.stars} />
         </div>
@@ -791,7 +829,7 @@ function EntryForm({ initial, onSave, onCancel, submitLabel = "Log entry" }) {
           <button onClick={onCancel} className="text-sm px-4 py-2.5 min-h-11 rounded-lg text-slate-500 hover:bg-slate-100">
             Cancel
           </button>
-          <button onClick={() => onSave(entry)} className="text-sm px-5 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white hover:bg-blue-900 flex items-center gap-1.5">
+          <button onClick={() => onSave(entry)} className="text-sm px-5 py-2.5 min-h-11 rounded-lg bg-navy text-white hover:bg-navy-deep flex items-center gap-1.5">
             <Anchor size={14} /> {submitLabel}
           </button>
         </div>
@@ -803,7 +841,7 @@ function EntryForm({ initial, onSave, onCancel, submitLabel = "Log entry" }) {
 function SectionHeading({ icon: Icon, children }) {
   return (
     <div className="flex items-center gap-2 mb-1">
-      <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-50 text-blue-900 shrink-0">
+      <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-brass-100 text-navy-deep shrink-0">
         <Icon size={15} />
       </span>
       <p className="text-sm sm:text-base font-semibold text-slate-700">{children}</p>
@@ -847,7 +885,7 @@ function EntryCard({ entry, topicName, onEdit, onDelete }) {
           <p className="text-sm text-slate-700 truncate">{entry.summary || "(no manifest yet)"}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-blue-900 font-medium flex items-center gap-0.5"><Navigation size={11} />{score.milesEarned}mi</span>
+          <span className="text-xs text-navy-deep font-medium flex items-center gap-0.5"><Navigation size={11} />{score.milesEarned}mi</span>
           {open ? <ChevronDown size={16} className="text-slate-400" /> : <ChevronRight size={16} className="text-slate-400" />}
         </div>
       </button>
@@ -890,18 +928,18 @@ function EntryCard({ entry, topicName, onEdit, onDelete }) {
           )}
           <div className="pt-2 border-t border-slate-100 space-y-2">
             <div className="flex items-center gap-3 text-xs text-slate-400">
-              <span className="flex items-center gap-1"><Navigation size={11} className="text-blue-900" />{score.milesEarned} mi</span>
+              <span className="flex items-center gap-1"><Navigation size={11} className="text-navy-deep" />{score.milesEarned} mi</span>
               <span className="flex items-center gap-1"><Fuel size={11} className="text-amber-500" />{score.coalEarned}</span>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
-              <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+              <button onClick={handleCopy} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-navy hover:text-navy">
                 {copied ? <CheckIcon size={13} className="text-emerald-600" /> : <Copy size={13} />}
                 {copied ? "Copied" : "Copy text"}
               </button>
-              <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+              <button onClick={handleDownload} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-navy hover:text-navy">
                 <Download size={13} /> Download .txt
               </button>
-              <button onClick={onEdit} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-blue-800 hover:text-blue-900">
+              <button onClick={onEdit} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-slate-200 text-slate-500 hover:border-navy hover:text-navy">
                 <Pencil size={13} /> Edit
               </button>
               <button onClick={onDelete} className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-9 rounded-lg border border-rose-200 text-rose-500 hover:bg-rose-50">
@@ -1066,52 +1104,71 @@ function FeynmanNotebook() {
   };
 
   if (!topicsLoaded || !entriesLoaded || !ledgerLoaded) {
-    return <div className="p-8 text-sm text-slate-400 flex items-center gap-2"><Ship size={16} className="animate-pulse" /> Casting off…</div>;
+    return <div className="p-8 text-sm text-slate-400 flex items-center gap-2 font-serif italic"><Ship size={16} className="animate-pulse" /> Casting off…</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="max-w-5xl mx-auto px-4 py-6">
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <div className="flex items-center gap-2">
-            <Ship size={18} className="text-blue-900" />
-            <h1 className="text-lg font-semibold">J.J.'s Ship Log</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={exportBackup}
-              className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-11 rounded-lg border border-slate-200 text-slate-600 hover:border-blue-800 hover:text-blue-900"
-              title="Download a backup file of everything logged on this device"
-            >
-              <Download size={14} /> Export
-            </button>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-1.5 text-xs px-3 py-2 min-h-11 rounded-lg border border-slate-200 text-slate-600 hover:border-blue-800 hover:text-blue-900"
-              title="Load a backup file to bring this device up to date"
-            >
-              <Copy size={14} /> Import
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/json"
-              className="hidden"
-              onChange={(e) => {
-                importBackup(e.target.files?.[0]);
-                e.target.value = "";
-              }}
-            />
+    <div className="min-h-screen text-slate-900 font-serif">
+      <div className="bg-navy relative overflow-hidden">
+        <Waves size={180} className="absolute -right-6 -bottom-10 text-white/5" />
+        <div className="max-w-5xl mx-auto px-4 pt-6 pb-5 relative">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <p className="rms-eyebrow text-[11px] text-brass uppercase mb-2">
+                RMS Ship's Log &middot; Learning Records
+              </p>
+              <div className="flex items-center gap-2.5">
+                <Ship size={22} className="text-brass shrink-0" />
+                <h1 className="font-mono font-bold text-2xl sm:text-3xl text-white tracking-tight">
+                  J.J.'s Ship Log
+                </h1>
+              </div>
+              <p className="font-serif italic text-blue-200 text-sm mt-1.5">
+                Log what you've learned, sail more miles, rise through the ranks
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={exportBackup}
+                className="rms-eyebrow flex items-center gap-1.5 text-[11px] px-3 py-2 min-h-11 rounded-lg border border-brass/50 text-brass hover:bg-white/5 uppercase"
+                title="Download a backup file of everything logged on this device"
+              >
+                <Download size={13} /> Export
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="rms-eyebrow flex items-center gap-1.5 text-[11px] px-3 py-2 min-h-11 rounded-lg border border-brass/50 text-brass hover:bg-white/5 uppercase"
+                title="Load a backup file to bring this device up to date"
+              >
+                <Copy size={13} /> Import
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/json"
+                className="hidden"
+                onChange={(e) => {
+                  importBackup(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </div>
           </div>
         </div>
-        <p className="text-sm text-slate-400 mb-4">Log what you've learned, sail more miles, rise through the ranks</p>
+      </div>
+      <div className="bg-brass/90 border-b border-brass-deep">
+        <p className="rms-eyebrow max-w-5xl mx-auto px-4 py-2 text-[11px] text-navy-deep uppercase text-center">
+          &#9875; Every entry logged is a new leg of the voyage
+        </p>
+      </div>
 
+      <div className="max-w-5xl mx-auto px-4 py-6">
         <Hud totalMiles={totals.miles} totalCoal={totals.coal} totalStars={totals.stars} justPromoted={justPromoted} />
 
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
           <div className="w-full lg:w-64 lg:shrink-0 space-y-3">
-            <div className="flex bg-slate-100 rounded-lg p-1 gap-1">
+            <div className="flex bg-white border border-navy/10 rounded-lg p-1 gap-1">
               {[
                 { id: "all", label: "All" },
                 { id: "school", label: "YBIP" },
@@ -1120,8 +1177,8 @@ function FeynmanNotebook() {
                 <button
                   key={v.id}
                   onClick={() => setViewFilter(v.id)}
-                  className={`flex-1 text-xs py-2.5 min-h-11 rounded-md font-medium transition ${
-                    viewFilter === v.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-400"
+                  className={`rms-eyebrow flex-1 text-[11px] py-2.5 min-h-11 rounded-md uppercase transition ${
+                    viewFilter === v.id ? "bg-navy text-brass" : "text-slate-400"
                   }`}
                 >
                   {v.label}
@@ -1135,34 +1192,42 @@ function FeynmanNotebook() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search voyages"
-                className="w-full text-base sm:text-sm pl-9 pr-3 py-2.5 min-h-11 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-800"
+                className="w-full text-base sm:text-sm pl-9 pr-3 py-2.5 min-h-11 rounded-lg border border-navy/15 bg-white focus:outline-none focus:ring-2 focus:ring-navy"
               />
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-2">
               {filteredTopics.map((t) => {
                 const tStars = ledger.topicStars?.[t.id] || 0;
+                const SubjectIcon = SUBJECT_ICONS[t.subject] || Ship;
+                const active = activeTopicId === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => { setActiveTopicId(t.id); setAddingEntry(false); }}
-                    className={`w-full text-left px-3 py-3 min-h-11 rounded-lg text-sm transition ${
-                      activeTopicId === t.id ? "bg-white border border-slate-200 shadow-sm" : "hover:bg-slate-100"
+                    className={`w-full text-left px-3 py-3 min-h-11 rounded-lg transition flex items-start gap-2.5 ${
+                      active ? "bg-white border-2 border-brass shadow-sm" : "bg-white/70 border border-navy/10 hover:border-navy/25"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className={`truncate ${activeTopicId === t.id ? "font-medium text-slate-900" : "text-slate-600"}`}>{t.name}</p>
-                      {tStars > 0 && <span className="text-xs text-amber-500 flex items-center gap-0.5 shrink-0"><Star size={10} className="fill-amber-400" />{tStars}</span>}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {t.viewTags.map((vt) => {
-                        const v = VIEW_TAGS.find((x) => x.id === vt);
-                        return v ? <Chip key={vt} className={v.color}>{v.label}</Chip> : null;
-                      })}
-                      {t.examTags.map((et) => {
-                        const e = EXAM_TAGS.find((x) => x.id === et);
-                        return e ? <Chip key={et} className={e.color}>{e.label}</Chip> : null;
-                      })}
+                    <span className="w-9 h-9 rounded-md bg-navy text-brass flex items-center justify-center shrink-0">
+                      <SubjectIcon size={16} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="rms-eyebrow text-[10px] text-brass-deep uppercase truncate">{t.subject}</p>
+                        {tStars > 0 && <span className="text-[11px] text-brass-deep flex items-center gap-0.5 shrink-0"><Star size={10} className="fill-brass" />{tStars}</span>}
+                      </div>
+                      <p className={`font-serif truncate ${active ? "font-semibold text-navy-deep" : "text-slate-700"}`}>{t.name}</p>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {t.viewTags.map((vt) => {
+                          const v = VIEW_TAGS.find((x) => x.id === vt);
+                          return v ? <Chip key={vt} className={v.color}>{v.label}</Chip> : null;
+                        })}
+                        {t.examTags.map((et) => {
+                          const e = EXAM_TAGS.find((x) => x.id === et);
+                          return e ? <Chip key={et} className={e.color}>{e.label}</Chip> : null;
+                        })}
+                      </div>
                     </div>
                   </button>
                 );
@@ -1177,7 +1242,7 @@ function FeynmanNotebook() {
             ) : (
               <button
                 onClick={() => setAddingTopic(true)}
-                className="w-full flex items-center justify-center gap-1.5 text-sm py-3 min-h-11 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-blue-800 hover:text-blue-900"
+                className="w-full flex items-center justify-center gap-1.5 text-sm py-3 min-h-11 rounded-lg border-2 border-dashed border-navy/25 text-navy/70 hover:border-navy hover:text-navy font-serif"
               >
                 <Plus size={15} /> New voyage
               </button>
@@ -1187,13 +1252,14 @@ function FeynmanNotebook() {
           {/* Main */}
           <div className="flex-1 min-w-0">
             {!activeTopic ? (
-              <div className="text-sm text-slate-400 py-12 text-center">Pick or chart a voyage to set sail.</div>
+              <div className="text-sm text-slate-400 py-12 text-center font-serif italic">Pick or chart a voyage to set sail.</div>
             ) : (
               <div className="space-y-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold">{activeTopic.name}</h2>
-                    <p className="text-sm text-slate-400">{activeTopic.subject} · {topicEntries.length} {topicEntries.length === 1 ? "log entry" : "log entries"}</p>
+                    <p className="rms-eyebrow text-[10px] text-brass-deep uppercase mb-0.5">{activeTopic.subject} Logbook</p>
+                    <h2 className="font-serif text-2xl font-semibold text-navy-deep">{activeTopic.name}</h2>
+                    <p className="text-sm text-slate-400">{topicEntries.length} {topicEntries.length === 1 ? "log entry" : "log entries"}</p>
                   </div>
                   <button onClick={() => deleteTopic(activeTopic.id)} className="text-slate-300 hover:text-rose-500 p-2.5 min-h-11 min-w-11 flex items-center justify-center">
                     <Trash2 size={16} />
@@ -1218,9 +1284,9 @@ function FeynmanNotebook() {
                 ) : (
                   <button
                     onClick={() => { setAddingEntry(true); setEditingEntryId(null); }}
-                    className="flex items-center gap-1.5 text-sm px-4 py-2.5 min-h-11 rounded-lg bg-blue-950 text-white hover:bg-blue-900"
+                    className="rms-eyebrow flex items-center gap-1.5 text-xs px-5 py-2.5 min-h-11 rounded-full bg-brass text-navy-deep hover:bg-brass-deep hover:text-white uppercase font-bold"
                   >
-                    <Plus size={15} /> Log new entry
+                    <Plus size={15} /> Log New Entry
                   </button>
                 )}
 
