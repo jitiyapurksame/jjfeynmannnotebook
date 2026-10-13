@@ -65,6 +65,7 @@ textarea.ruled{border:0;border-radius:0;background:repeating-linear-gradient(#fb
 .sw{width:42px;height:42px;border-radius:50%;border:4px solid #fff;padding:0}
 .hud{background:var(--deep);border:2px solid var(--brass);border-radius:12px;padding:10px 14px;margin:0 0 14px}.rk{font:700 21px Palatino,Georgia,serif;color:var(--brass)}.prog{height:10px;background:#0006;border-radius:6px;margin:6px 0;overflow:hidden}.prog i{display:block;height:100%;background:var(--brass)}.stats{display:flex;gap:16px;font-size:16px}
 .prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:8px}.prod{background:var(--cream);color:var(--navy);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}.pv{width:100%;height:140px;border-radius:8px;overflow:hidden}.pv svg{width:100%;height:100%}.own{color:#2c7a3f;font-weight:700;min-height:48px;display:flex;align-items:center}
+.opt.danger{background:var(--red);color:#fff;border-color:var(--red)}
 .note{opacity:.8;font-size:15px}.empty{opacity:.7;padding:24px 0;text-align:center}
 </style></head>
 <body><div id="app"></div>
@@ -77,6 +78,11 @@ const hash=s=>[...s].reduce((a,c)=>a+c.charCodeAt(0),0);
 function h(t,a,...c){a=a||{};const e=document.createElement(t);for(const k in a){if(k.slice(0,2)==='on')e.addEventListener(k.slice(2),a[k]);else if(k==='class')e.className=a[k];else e.setAttribute(k,a[k]);}
 c.flat().forEach(x=>{if(x!=null&&x!==false)e.append(x.nodeType?x:document.createTextNode(x));});return e;}
 const fill=(el,...c)=>{el.replaceChildren(...c.flat(Infinity).filter(x=>x!=null&&x!==false));};
+const dlg=(title,body,btns)=>new Promise(res=>{const ov=h('div',{class:'sheet'}),done=v=>{ov.remove();res(v);};
+ov.append(h('div',{class:'box'},h('h2',{},title),body,btns.map(([l,v,c])=>h('button',{class:'opt'+(c?' '+c:''),onclick:()=>done(typeof v==='function'?v():v)},l))));document.body.append(ov);});
+const ask=(msg,yes)=>dlg(msg,null,[[yes||'Yes',true,'danger'],['Cancel',false,'ghost']]);
+const say=msg=>dlg(msg,null,[['OK',true]]);
+const askText=(title,init)=>{const i=h('input',{class:'dline',style:'color:#0E2238;border-bottom-color:#0E2238'});i.value=init||'';const p=dlg(title,i,[['Save',()=>i.value.trim()],['Cancel',null,'ghost']]);setTimeout(()=>i.focus(),50);return p;};
 function toast(m,ms){const t=h('div',{class:'toast'},m);document.body.append(t);setTimeout(()=>t.remove(),ms||1800);}
 const RANKS=[['Cabin boy','⚓'],['Deckhand','🛟'],['Able seaman','🧭'],['Petty officer','🚩'],['Bosun','📣'],['First mate','🚢'],['Chief officer','⛵'],['Staff captain','🎖️'],['Captain','🏅'],['Commodore','👑']];
 const rank=m=>{const lv=Math.floor(m/150)+1,i=Math.min(lv-1,RANKS.length-1);return{lv,t:RANKS[i][0]+(lv>RANKS.length?' '+(lv-RANKS.length+1):''),ic:RANKS[i][1],pct:Math.round((m%150)/150*100)};};
@@ -184,11 +190,11 @@ setTimeout(()=>ta.focus(),50);
 const recent=S.items.filter(i=>i.type==='note').sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
 return h('div',{class:'wrap'},back(),h('h2',{},"Captain's Quick Notes"),ta,
 h('button',{class:'act',onclick:stowIt},'📌 Pin it'),
-recent.length?h('div',{},h('div',{class:'grid'},recent.map(i=>card(i))),h('button',{class:'act ghost',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'See the whole Notice Board')):null);}
+recent.length?h('div',{},h('div',{class:'grid'},recent.map(i=>card(i,()=>openNote(i)))),h('button',{class:'act ghost',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'See the whole Notice Board')):null);}
 
 function card(i,onTap){
-const ti=i.type==='log'?(i.title!=null?i.title:((S.cols.find(c=>c.id===i.collectionId)||{}).name||'')):'';
-const body=i.type==='drawing'?h('img',{src:i.scene?svgUrl(i.scene):i.image,alt:i.text}):h('div',{},ti?h('b',{},ti):null,h('p',{},(i.text||'').slice(0,i.type==='note'?240:140)));
+const ti=i.type==='log'?(i.title!=null?i.title:((S.cols.find(c=>c.id===i.collectionId)||{}).name||'')):(i.title||'');
+const body=i.type==='drawing'?h('div',{},h('img',{src:i.scene?svgUrl(i.scene):i.image,alt:i.text}),ti?h('b',{},ti):null):h('div',{},ti?h('b',{},ti):null,h('p',{},(i.text||'').slice(0,i.type==='note'?240:140)));
 return h('div',{class:'card c'+(i.color||0)+(sel.has(i.id)?' sel':''),style:'--r:'+((hash(i.id)%5)-2)+'deg',onclick:onTap||null},h('i',{class:'pin'}),body,h('small',{},new Date(i.createdAt).toLocaleDateString()));}
 
 function shelfView(){
@@ -198,17 +204,19 @@ if(cur.col==='hold')list=list.filter(i=>!i.collectionId);else if(cur.col!=='all'
 list.sort((a,b)=>b.createdAt-a.createdAt);
 const chip=(id,l)=>h('button',{class:'chip'+(cur.col===id?' on':''),onclick:()=>{cur.col=id;sel.clear();render();}},l);
 const tap=i=>()=>{sel.has(i.id)?sel.delete(i.id):sel.add(i.id);render();};
+const ac=cols.find(c=>c.id===cur.col);
 return h('div',{class:'wrap'},back(),h('h2',{},t.title),
 h('div',{class:'chips'},chip('all','All'),chip('hold','⚓ Cargo Hold'),cols.map(c=>chip(c.id,c.name))),
+ac?h('div',{},h('button',{class:'act sm ghost',onclick:()=>renameCol(ac)},'✏️ Rename '+t.word),h('button',{class:'act sm ghost',onclick:()=>deleteCol(ac)},'🗑 Delete '+t.word)):null,
 list.length?h('div',{class:'grid'},list.map(i=>card(i,tap(i)))):h('p',{class:'empty'},'Nothing here yet.'),
-sel.size?h('div',{class:'bar'},(k==='log'||k==='drawing')&&sel.size===1?h('button',{class:'act',onclick:()=>{const it=S.items.find(i=>sel.has(i.id));if(k==='log')openLog(it);else if(it.scene)openTable(it);else toast('Old sketches can be viewed, not edited');}},'📖 Open'):null,h('button',{class:'act',onclick:stow},'⚓ Stow '+sel.size+' in…'),h('button',{class:'act red',onclick:overboard},'🗑 Throw overboard')):
-list.length?h('p',{class:'note'},'Tap items to pick them, then stow them in a '+t.word+'.'):null);}
+sel.size?h('div',{class:'bar'},sel.size===1?h('button',{class:'act',onclick:()=>{const it=S.items.find(i=>sel.has(i.id));if(k==='note')openNote(it);else if(k==='log')openLog(it);else if(it.scene)openTable(it);else openPic(it);}},'✏️ Open / edit'):null,sel.size===1?h('button',{class:'act ghost',onclick:()=>renameItem(S.items.find(i=>sel.has(i.id)))},'🏷️ Rename'):null,h('button',{class:'act',onclick:stow},'⚓ Stow '+sel.size+' in…'),h('button',{class:'act red',onclick:overboard},'🗑 Throw overboard')):
+list.length?h('p',{class:'note'},'Tap an item to pick it. Pick one to open or edit it. Pick several to stow or delete them.'):null);}
 
 function stow(){
 const k=cur.kind,ov=h('div',{class:'sheet'});
 const mv=async id=>{let n=0;for(const i of S.items.filter(x=>sel.has(x.id))){if(id&&!i.collectionId&&!i.sorted){i.sorted=1;n++;}i.collectionId=id;await put('items',i);}sel.clear();ov.remove();render();const tl=n?await award({coal:3*n}):'';toast('Stowed ✓'+tl,tl.includes('🎉')?4000:2000);};
 const mk=n=>{const c={id:uid(),name:n,kind:k};put('cols',c).then(()=>{S.cols.push(c);mv(c.id);});};
-const newCol=()=>{const n=prompt('Name your new '+T[k].word);if(n&&n.trim())mk(n.trim());};
+const newCol=async()=>{const n=await askText('Name your new '+T[k].word);if(n)mk(n);};
 const have=S.cols.filter(c=>c.kind===k);
 const sugg=k==='log'?['YBIP Crossing','KVIS','ASEAN','Just curious'].filter(n=>!have.some(c=>c.name.toLowerCase()===n.toLowerCase())).map(n=>h('button',{class:'opt',onclick:()=>mk(n)},'＋ '+n)):null;
 ov.append(h('div',{class:'box'},h('h2',{},'Stow in…'),h('button',{class:'opt',onclick:()=>mv(null)},'⚓ Cargo Hold'),
@@ -216,7 +224,7 @@ S.cols.filter(c=>c.kind===k).map(c=>h('button',{class:'opt',onclick:()=>mv(c.id)
 sugg,h('button',{class:'opt',onclick:newCol},'＋ New '+T[k].word),h('button',{class:'opt ghost',onclick:()=>ov.remove()},'Cancel')));
 document.body.append(ov);}
 async function overboard(){
-if(!confirm('Throw '+sel.size+' overboard? This cannot be undone.'))return;
+if(!await ask('Throw '+sel.size+' overboard? This cannot be undone.','Throw overboard'))return;
 for(const id of sel)await del('items',id);sel.clear();await reload();render();}
 
 /*SHAPES*/
@@ -412,7 +420,7 @@ fill(tray,Object.keys(PAPERS).map(id=>h('button',{class:'chip'+(cur===id?' on':'
 fill(tray,tab===0?[h('button',{class:'tray fig',onclick:()=>addFig(0)},'🧍 Blocky Captain'),h('button',{class:'tray fig',onclick:()=>addFig(1)},'🧍‍♀️ Blocky Captainess'),
 h('div',{style:'flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center'},h('span',{class:'note'},'Outfit:'),Object.keys(OUT).map(id=>h('button',{class:'chip'+(outfit===id?' on':''),onclick:()=>{if(!owns(id)){lock(OUT[id].n,OUT[id].price);return;}outfit=id;fillTray();}},(owns(id)?'':'🔒 ')+OUT[id].n)))]:null,
 T[2].map(k=>{const b=h('button',{class:'tray','aria-label':k,onclick:()=>add(k)});b.innerHTML=`<svg viewBox="-60 -60 120 120" width="100%" height="100%">${D[k](DEF[k])}</svg>`;return b;}));};
-const stowIt=async()=>{if(!SC.some(o=>o.k!=='bg')){alert('Add something to the table first, Captain.');return;}
+const stowIt=async()=>{if(!SC.some(o=>o.k!=='bg')){say('Add something to the table first, Captain.');return;}
 const old=drawEdit&&S.items.find(i=>i.id===drawEdit);
 const it=old||{id:uid(),type:'drawing',text:'',collectionId:null,createdAt:Date.now()};
 it.scene=JSON.parse(JSON.stringify(SC));it.image=null;await put('items',it);if(!old)S.items.push(it);
@@ -422,7 +430,7 @@ const toPng=()=>{const img=new Image();img.onload=()=>{const c=document.createEl
 c.toBlob(b=>{const a=h('a',{href:URL.createObjectURL(b),download:'drawing-'+new Date().toISOString().slice(0,10)+'.png'});document.body.append(a);a.click();a.remove();});};img.src=svgUrl(SC);};
 paint();bars();fillTray();
 return h('div',{class:'wrap wide'},back(),
-h('div',{class:'hdr'},h('h2',{},"Captain's Drawing Table"),h('div',{},h('button',{class:'act sm',onclick:stowIt},'⚓ Stow it'),h('button',{class:'act sm ghost',onclick:toPng},'Save to device'))),
+h('div',{class:'hdr'},h('h2',{},"Captain's Drawing Table"),h('div',{},h('button',{class:'act sm',onclick:stowIt},'⚓ Stow it'),h('button',{class:'act sm ghost',onclick:toPng},'Save to device'),drawEdit?h('button',{class:'act sm red',onclick:()=>delItem(drawEdit)},'🗑 Delete'):null)),
 h('div',{class:'tbl'},h('div',{},stage),h('div',{class:'side'},t2,t1,tabs,tray)));}
 
 let editId=null,LD=null;
@@ -443,7 +451,7 @@ const keep=()=>{if(!editId){S.logDraft=Object.assign({},LD);setMeta('logdraft',S
 const bind=(el,k)=>{el.value=LD[k]||'';el.addEventListener('input',()=>{LD[k]=el.value;keep();upd();});return el;};
 const pv=h('span',{class:'note',style:'margin:0 10px'});const upd=()=>{const q=scoreLog(LD);pv.textContent='This page: +'+q.miles+' mi · +'+q.coal+' coal';};upd();
 const finish=async()=>{
-if(!GROUPS.some(g=>g.k.some(k=>(LD[k]||'').trim()))&&!(LD.title||'').trim()){alert('Write something first, Captain.');return;}
+if(!GROUPS.some(g=>g.k.some(k=>(LD[k]||'').trim()))&&!(LD.title||'').trim()){say('Write something first, Captain.');return;}
 const old=editId&&S.items.find(i=>i.id===editId);
 const it=old||{id:uid(),type:'log',collectionId:null,createdAt:Date.parse(LD.date)||Date.now()};
 it.title=(LD.title||'').trim();it.text=LD.eli10||LD.summary||LD.why||LD.title||'';it.data=Object.assign({},old&&old.data||{},LD);
@@ -459,7 +467,7 @@ bind(h('input',{type:'date',class:'dline'}),'date'),
 bind(h('input',{class:'dline big2',placeholder:"Today I'm exploring…"}),'title'),
 GROUPS.map(g=>h('div',{class:'q'},h('h3',{},g.t),h('p',{class:'hint'},g.s),
 g.k.map((k,i)=>h('div',{},g.l?h('label',{},g.l[i]):null,bind(h('textarea',{class:'ruled',rows:g.k.length>1?2:3}),k)))))),
-h('div',{class:'bar'},h('button',{class:'act',onclick:finish},'📖 Close the log'),pv));}
+h('div',{class:'bar'},h('button',{class:'act',onclick:finish},'📖 Close the log'),editId?h('button',{class:'act red',onclick:()=>delItem(editId)},'🗑 Delete'):null,pv));}
 
 function lifeboat(){
 const out=h('div',{}),inp=h('textarea',{class:'code',placeholder:'Paste every LIFEBOAT part here'});
@@ -469,8 +477,8 @@ h('p',{},'Send these '+parts.length+' message'+(parts.length>1?'s':'')+' to your
 parts.map((p,i)=>h('div',{},h('textarea',{class:'code',readonly:'readonly'},p),
 h('button',{class:'act',onclick:async()=>{try{await navigator.clipboard.writeText(p);toast('Copied part '+(i+1));}catch(e){toast('Press and hold to copy');}}},'Copy part '+(i+1)+' of '+parts.length),
 navigator.share?h('button',{class:'act ghost',onclick:()=>navigator.share({text:p}).catch(()=>{})},'Share'):null)));};
-const restore=async()=>{try{const n=await restoreCode(inp.value);inp.value='';toast(n+' item'+(n===1?'':'s')+' added');render();}catch(e){alert(e.message);}};
-const file=h('input',{type:'file',accept:'.json',style:'display:none',onchange:async e=>{const f=e.target.files[0];if(!f)return;try{const n=await mergeIn(JSON.parse(await f.text()));toast(n+' items added');render();}catch(x){alert('That file could not be read.');}}});
+const restore=async()=>{try{const n=await restoreCode(inp.value);inp.value='';toast(n+' item'+(n===1?'':'s')+' added');render();}catch(e){say(e.message);}};
+const file=h('input',{type:'file',accept:'.json',style:'display:none',onchange:async e=>{const f=e.target.files[0];if(!f)return;try{const n=await mergeIn(JSON.parse(await f.text()));toast(n+' items added');render();}catch(x){say('That file could not be read.');}}});
 const saveFile=async()=>{const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify({v:1,cols:S.cols,items:S.items,ledger:S.ledger,owned:S.owned})],{type:'application/json'})),download:'ship-log-backup-'+new Date().toISOString().slice(0,10)+'.json'});document.body.append(a);a.click();a.remove();await setMeta('lastBackup',Date.now());S.lastBackup=Date.now();};
 return h('div',{class:'wrap'},back(),h('h2',{},'🛟 Lifeboat'),
 h('p',{class:'note'},'Make a code, send it by LINE, paste it on the new device. Restoring adds to what is already there and never erases anything.'),
@@ -491,7 +499,31 @@ h('h2',{style:'margin-top:18px'},'Blocky outfits'),h('div',{class:'prods'},Objec
 h('h2',{style:'margin-top:18px'},'Drawing papers'),h('div',{class:'prods'},Object.keys(PAPERS).filter(i=>i!=='cream').map(i=>card(i,PAPERS[i],pap(i)))),
 h('p',{class:'note',style:'margin-top:14px'},'Outfits are chosen in the Drawing Table, in the Crew tab. Papers are in the Paper tab.'));}
 
-function render(){const v={home,quick,shelf:shelfView,table:tablePage,shop,lifeboat,logpage:logPage}[view]();const a=document.getElementById('app');a.replaceChildren(v);}
+async function delItem(id){const it=S.items.find(i=>i.id===id);if(!it)return;
+if(!await ask('Throw this '+(it.type==='note'?'note':it.type==='drawing'?'picture':'entry')+' overboard? This cannot be undone.','Throw overboard'))return;
+await del('items',id);S.items=S.items.filter(i=>i.id!==id);toast('Thrown overboard');cur={kind:it.type,col:'all'};go('shelf');}
+async function renameItem(it){const t=await askText('Name this '+(it.type==='note'?'note':it.type==='drawing'?'picture':'entry'),it.title!=null?it.title:(it.type==='log'?((S.cols.find(c=>c.id===it.collectionId)||{}).name||''):''));
+if(t===null)return;it.title=t;await put('items',it);toast('Renamed ✓');render();}
+async function renameCol(c){const n=await askText('Rename this '+T[c.kind].word,c.name);if(!n)return;c.name=n;await put('cols',c);toast('Renamed ✓');render();}
+async function deleteCol(c){if(!await ask('Delete the '+T[c.kind].word+' "'+c.name+'"? Its items go back to the Cargo Hold.','Delete '+T[c.kind].word))return;
+for(const i of S.items.filter(x=>x.collectionId===c.id)){i.collectionId=null;await put('items',i);}
+await del('cols',c.id);S.cols=S.cols.filter(x=>x.id!==c.id);cur.col='all';sel.clear();toast('Deleted');render();}
+let noteId=null,picId=null;
+function openNote(it){noteId=it.id;go('note');}
+function openPic(it){picId=it.id;go('pic');}
+function notePage(){const it=S.items.find(i=>i.id===noteId);if(!it)return home();
+const ti=h('input',{class:'dline',placeholder:'Title (optional)',style:'color:#F3EAD3;border-bottom-color:#C9A24B'});ti.value=it.title||'';
+const ta=h('textarea',{});ta.value=it.text||'';setTimeout(()=>ta.focus(),50);
+const save=async()=>{const t=ta.value.trim();if(!t){say('A note needs some words. Or use Delete.');return;}it.text=t;it.title=ti.value.trim();await put('items',it);toast('Note saved ✓');cur={kind:'note',col:'all'};go('shelf');};
+return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'⬅ Notice Board'),h('h2',{},'Edit note'),ti,ta,
+h('button',{class:'act',onclick:save},'💾 Save changes'),h('button',{class:'act red',onclick:()=>delItem(it.id)},'🗑 Delete'));}
+function picPage(){const it=S.items.find(i=>i.id===picId);if(!it)return home();
+return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'drawing',col:'all'};go('shelf');}},'⬅ Chart Room'),h('h2',{},it.title||'Picture'),
+h('img',{src:it.image,alt:'',style:'width:100%;border-radius:8px;background:#fff'}),
+h('p',{class:'note'},"This is an older picture, so it can't be edited. You can throw it overboard."),
+h('button',{class:'act',onclick:()=>renameItem(it)},'🏷️ Rename'),h('button',{class:'act red',onclick:()=>delItem(it.id)},'🗑 Delete'));}
+
+function render(){const v={note:notePage,pic:picPage,home,quick,shelf:shelfView,table:tablePage,shop,lifeboat,logpage:logPage}[view]();const a=document.getElementById('app');a.replaceChildren(v);}
 
 (async function init(){
 try{try{await openDb();}catch(e){mem=true;S.temp=true;}await migrate();await reload();S.draft=(await getMeta('draft'))||'';S.lastBackup=(await getMeta('lastBackup'))||0;S.logDraft=(await getMeta('logdraft'))||null;S.drawDraft=(await getMeta('drawdraft'))||null;S.ledger=(await getMeta('ledger'))||{miles:0,coal:0,stars:0};S.owned=(await getMeta('owned'))||[];
