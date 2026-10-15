@@ -34,8 +34,9 @@ textarea.code{min-height:90px;font:13px monospace;margin:6px 0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;padding:6px 2px}
 .card{position:relative;min-height:110px;padding:20px 12px 10px;background:#fff7da;color:#222;border-radius:4px;transform:rotate(var(--r));box-shadow:0 3px 6px #0007;word-wrap:break-word;overflow:hidden}
 .card p{margin:0 0 8px;font-size:16px;white-space:pre-wrap}.card small{opacity:.55;font-size:12px}.card img{width:100%;border-radius:2px}
+.c5{background:#dbe8fb}.c6{background:#ffe3ef}
 .c1{background:#dff1ee}.c2{background:#fbdcd4}.c3{background:#e4e0f6}.c4{background:#e6f0cd}
-.pin{position:absolute;top:5px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--red);box-shadow:0 2px 2px #0006}
+.pin{position:absolute;top:5px;left:50%;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--pc,var(--red));box-shadow:0 2px 2px #0006,inset 0 0 0 1px #0003}
 .card.sel{outline:5px solid var(--brass);outline-offset:2px}
 .bar{position:sticky;bottom:8px;display:flex;flex-wrap:wrap;background:var(--deep);border:2px solid var(--brass);border-radius:14px;padding:6px 10px;margin-top:12px}
 .sheet{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-end;justify-content:center;z-index:9}
@@ -66,6 +67,10 @@ textarea.ruled{border:0;border-radius:0;background:repeating-linear-gradient(#fb
 .hud{background:var(--deep);border:2px solid var(--brass);border-radius:12px;padding:10px 14px;margin:0 0 14px}.rk{font:700 21px Palatino,Georgia,serif;color:var(--brass)}.prog{height:10px;background:#0006;border-radius:6px;margin:6px 0;overflow:hidden}.prog i{display:block;height:100%;background:var(--brass)}.stats{display:flex;gap:16px;font-size:16px}
 .prods{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:8px}.prod{background:var(--cream);color:var(--navy);border-radius:12px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}.pv{width:100%;height:140px;border-radius:8px;overflow:hidden}.pv svg{width:100%;height:100%}.own{color:#2c7a3f;font-weight:700;min-height:48px;display:flex;align-items:center}
 .opt.danger{background:var(--red);color:#fff;border-color:var(--red)}
+.swrow{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 12px}.sw2{width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px #0006;padding:0}.sw2.on{border-color:var(--brass);box-shadow:0 0 0 3px var(--brass)}
+.card.prev{width:130px;min-height:84px;margin:8px 0 4px;transform:rotate(-2deg)}.lbl{font-weight:700;margin:10px 0 0}
+.orient{flex-basis:100%;display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:4px}.compass{display:grid;grid-template-columns:repeat(3,48px);gap:6px}.compass i{display:block}.flips{display:flex;flex-direction:column;gap:6px}.flips .tb{padding:0 12px;font-size:17px}
+.ol{margin:6px 0 10px;padding-left:22px;line-height:1.5}
 .note{opacity:.8;font-size:15px}.empty{opacity:.7;padding:24px 0;text-align:center}
 </style></head>
 <body><div id="app"></div>
@@ -181,21 +186,33 @@ hold?h('p',{class:'note'},'⚓ '+hold+' in the Cargo Hold, ready to stow in a ca
 big('🛒',"The Purser's Shop",'Spend your coal on outfits and papers',()=>go('shop')),
 big('🛟','Lifeboat','Make or use a backup code',()=>go('lifeboat'),'life'));}
 
+const NOTEC=['#fff7da','#dff1ee','#fbdcd4','#e4e0f6','#e6f0cd','#dbe8fb','#ffe3ef'];
+const PINC=['#D64541','#2E86DE','#4DAA57','#F5A623','#8E5BD0','#FF8FB1','#222222','#FFFFFF'];
+let qCol=Math.floor(Math.random()*5),qPin=0;
+function notePicker(col,pin,onChange){
+const prev=h('div',{class:'card prev'},h('i',{class:'pin'}),h('p',{},'Your note'));
+const st={col,pin};
+const paint=()=>{prev.className='card prev c'+st.col;prev.style.setProperty('--pc',PINC[st.pin]);};
+const row=(list,key,label)=>{const r=h('div',{class:'swrow'});const draw=()=>fill(r,list.map((c,i)=>h('button',{class:'sw2'+(st[key]===i?' on':''),style:'background:'+c,'aria-label':label+' '+(i+1),onclick:()=>{st[key]=i;draw();paint();onChange(st.col,st.pin);}})));draw();return r;};
+paint();
+return h('div',{},h('div',{class:'lbl'},'Paper colour'),row(NOTEC,'col','Paper colour'),h('div',{class:'lbl'},'Pin colour'),row(PINC,'pin','Pin colour'),prev);}
+
 function quick(){
 const ta=h('textarea',{placeholder:"What's on your mind, Captain?",oninput:()=>{S.draft=ta.value;setMeta('draft',ta.value);}});ta.value=S.draft||'';
 const stowIt=async()=>{const t=ta.value.trim();if(!t)return;
-const it={id:uid(),type:'note',text:t,color:Math.floor(Math.random()*5),collectionId:null,createdAt:Date.now()};
+const it={id:uid(),type:'note',text:t,color:qCol,pin:qPin,collectionId:null,createdAt:Date.now()};
 await put('items',it);S.items.push(it);S.draft='';await setMeta('draft','');const tl=await award({miles:2,coal:1});toast('Pinned in the Cargo Hold ⚓'+tl,tl.includes('🎉')?4000:2200);render();};
 setTimeout(()=>ta.focus(),50);
 const recent=S.items.filter(i=>i.type==='note').sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
 return h('div',{class:'wrap'},back(),h('h2',{},"Captain's Quick Notes"),ta,
+notePicker(qCol,qPin,(c,p)=>{qCol=c;qPin=p;}),
 h('button',{class:'act',onclick:stowIt},'📌 Pin it'),
 recent.length?h('div',{},h('div',{class:'grid'},recent.map(i=>card(i,()=>openNote(i)))),h('button',{class:'act ghost',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'See the whole Notice Board')):null);}
 
 function card(i,onTap){
 const ti=i.type==='log'?(i.title!=null?i.title:((S.cols.find(c=>c.id===i.collectionId)||{}).name||'')):(i.title||'');
 const body=i.type==='drawing'?h('div',{},h('img',{src:i.scene?svgUrl(i.scene):i.image,alt:i.text}),ti?h('b',{},ti):null):h('div',{},ti?h('b',{},ti):null,h('p',{},(i.text||'').slice(0,i.type==='note'?240:140)));
-return h('div',{class:'card c'+(i.color||0)+(sel.has(i.id)?' sel':''),style:'--r:'+((hash(i.id)%5)-2)+'deg',onclick:onTap||null},h('i',{class:'pin'}),body,h('small',{},new Date(i.createdAt).toLocaleDateString()));}
+return h('div',{class:'card c'+(i.color||0)+(sel.has(i.id)?' sel':''),style:'--r:'+((hash(i.id)%5)-2)+'deg'+(i.type==='note'&&i.pin?';--pc:'+PINC[i.pin]:''),onclick:onTap||null},h('i',{class:'pin'}),body,h('small',{},new Date(i.createdAt).toLocaleDateString()));}
 
 function shelfView(){
 const k=cur.kind,t=T[k],cols=S.cols.filter(c=>c.kind===k);
@@ -325,7 +342,7 @@ slime:c=>`<path d="M0 -46Q10 -40 22 -24Q50 -4 48 28Q40 46 0 46Q-40 46 -48 28Q-50
 wizardhat:c=>`<polygon points="0,-50 30,28 -30,28" fill="${c}" ${L}/><ellipse cy="30" rx="52" ry="12" fill="${c}" ${L}/><rect x="-26" y="14" width="52" height="8" fill="#F5CD30"/>`,
 castle:c=>`<rect x="-40" y="-20" width="80" height="66" fill="${c}" ${L}/><rect x="-48" y="-40" width="26" height="86" fill="${c}" ${L}/><rect x="22" y="-40" width="26" height="86" fill="${c}" ${L}/><path d="M-48 -40V-50H-40V-44H-34V-50H-26V-44H-22V-40ZM22 -40V-50H30V-44H36V-50H44V-44H48V-40Z" fill="${c}" ${L}/><path d="M-12 46V20Q0 8 12 20V46Z" fill="#5a3a1a"/>`,
 coin:c=>`<circle r="44" fill="${c}" ${L}/><circle r="32" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="4"/><path d="M0 -18V18M-10 -8H10M-10 8H10" stroke="#8a6d14" stroke-width="5" stroke-linecap="round"/>`};
-const objSvg=o=>`<g data-id="${o.id}"${o.e?' pointer-events="none"':''} transform="translate(${o.x} ${o.y}) rotate(${o.r}) scale(${o.s})">${o.k==='path'?`<path d="${o.d}" fill="none" stroke="${o.c}" stroke-width="${o.w}" stroke-linecap="round" stroke-linejoin="round"/>`:D[o.k](o.c)}</g>`;
+const objSvg=o=>`<g data-id="${o.id}"${o.e?' pointer-events="none"':''} transform="translate(${o.x} ${o.y}) rotate(${o.r}) scale(${o.s*(o.fx?-1:1)} ${o.s*(o.fy?-1:1)})">${o.k==='path'?`<path d="${o.d}" fill="none" stroke="${o.c}" stroke-width="${o.w}" stroke-linecap="round" stroke-linejoin="round"/>`:D[o.k](o.c)}</g>`;
 const grid=(col,op)=>{let d='';for(let x=40;x<800;x+=40)d+=`M${x} 0V600`;for(let y=40;y<600;y+=40)d+=`M0 ${y}H800`;return `<path d="${d}" stroke="${col}" stroke-opacity="${op}" stroke-width="1.5" fill="none"/>`;};
 const waves=()=>{let d='';for(let y=70;y<600;y+=100)d+=`M0 ${y}q25 -18 50 0`+' t50 0'.repeat(15);return `<path d="${d}" stroke="#fff" stroke-opacity=".6" stroke-width="3" fill="none"/>`;};
 const stars=()=>{let o='';for(let i=0;i<45;i++)o+=`<circle cx="${(i*173+40)%800}" cy="${(i*97+i*i*13)%600}" r="${1.5+i%3}" fill="#fff" fill-opacity=".85"/>`;return o;};
@@ -377,6 +394,14 @@ return `<g transform="translate(${o.x} ${o.y}) rotate(${o.r})"><rect x="${-E}" y
 const paint=()=>{stage.innerHTML=sceneSvg(SC,ext());};
 const pt=e=>{const v=stage.firstChild,p=v.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(v.getScreenCTM().inverse());};
 const tb=(label,f,on,name,dim)=>h('button',{class:'tb'+(on?' on':''),style:dim?'opacity:.35':'','aria-label':name,onclick:f},label);
+const DIRS=[[315,'⬉','up-left'],[0,'⬆','up'],[45,'⬈','up-right'],[270,'⬅','left'],null,[90,'➡','right'],[225,'⬋','down-left'],[180,'⬇','down'],[135,'⬊','down-right']];
+const nrm=a=>((Math.round(a)%360)+360)%360;
+const face=a=>()=>{const o=O(),l=LIST();if(!o||!l.length)return;snap();applyT(l,bases(l),pivot(l),a-o.r,1);paint();bars();commit();};
+const flipPv=l=>{if(l.length===1&&l[0].k==='path'){const o=l[0],n=(o.d.match(/-?\d+(?:\.\d+)?/g)||[]).map(Number);const xs=n.filter((_,i)=>i%2===0),ys=n.filter((_,i)=>i%2===1);
+const cx=(Math.min(...xs)+Math.max(...xs))/2||0,cy=(Math.min(...ys)+Math.max(...ys))/2||0,r=o.r*Math.PI/180,px=cx*o.s*(o.fx?-1:1),py=cy*o.s*(o.fy?-1:1);
+return {x:o.x+px*Math.cos(r)-py*Math.sin(r),y:o.y+px*Math.sin(r)+py*Math.cos(r)};}return pivot(l);};
+const flip=ax=>()=>{const l=LIST();if(!l.length)return;snap();const pv=flipPv(l);
+l.forEach(x=>{if(ax==='x'){x.x=Math.round(2*pv.x-x.x);x.fx=x.fx?0:1;}else{x.y=Math.round(2*pv.y-x.y);x.fy=x.fy?0:1;}x.r=Math.round(-x.r);});paint();bars();commit();};
 const xf=(da,k)=>()=>{const l=LIST();if(!l.length)return;snap();applyT(l,bases(l),pivot(l),da,k);paint();commit();};
 const setMode=m=>()=>{mode=m;pick=null;paint();bars();};
 const recolour=c=>{const o=O();if(o&&mode==='move'){snap();o.c=c;paint();commit();}else penColor=c;bars();};
@@ -390,7 +415,10 @@ h('div',{style:'flex-basis:100%'}),
 PAL.map(c=>h('button',{class:'sw',style:'background:'+c+';border-color:'+(((o&&mode==='move')?o.c:penColor)===c?'#C9A24B':'#fff'),'aria-label':'Colour '+c,onclick:()=>recolour(c)})));
 fill(t2,o&&mode==='move'?[
 o.g?tb(solo?'✋ One part':'🧍 Whole figure',()=>{solo=!solo;paint();bars();},solo,'Switch between moving the whole figure and one part'):null,
-tb('⟲',xf(-15,1),0,'Turn left'),tb('⟳',xf(15,1),0,'Turn right'),tb('＋',xf(0,1.15),0,'Bigger'),tb('－',xf(0,1/1.15),0,'Smaller'),
+tb('⟲',xf(-15,1),0,'Turn left'),tb('⟳',xf(15,1),0,'Turn right'),h('div',{class:'orient'},h('div',{class:'compass'},DIRS.map(d=>d?h('button',{class:'tb'+(nrm(o.r)===d[0]?' on':''),'aria-label':'Face '+d[2],onclick:face(d[0])},d[1]):h('i',{}))),
+h('div',{class:'flips'},h('button',{class:'tb'+(o.fx?' on':''),'aria-label':'Flip left-right',onclick:flip('x')},'↔ Flip'),h('button',{class:'tb'+(o.fy?' on':''),'aria-label':'Flip up-down',onclick:flip('y')},'↕ Flip')),
+h('span',{class:'note',style:'flex:1;min-width:140px'},'⬆ is how the piece first appeared. Tap another arrow to turn it that way.')),
+tb('＋',xf(0,1.15),0,'Bigger'),tb('－',xf(0,1/1.15),0,'Smaller'),
 tb('⧉',()=>{snap();const c=JSON.parse(JSON.stringify(o));c.id=uid();c.g=null;c.x+=30;c.y+=30;SC.push(c);pick=c.id;paint();bars();commit();},0,'Copy'),
 tb('⬆',()=>{snap();SC.splice(SC.indexOf(o),1);SC.push(o);paint();commit();},0,'Bring to front'),
 tb('🗑',()=>{snap();SC=SC.filter(x=>x!==o);pick=null;paint();bars();commit();},0,'Delete')]:
@@ -426,11 +454,29 @@ const it=old||{id:uid(),type:'drawing',text:'',collectionId:null,createdAt:Date.
 it.scene=JSON.parse(JSON.stringify(SC));it.image=null;await put('items',it);if(!old)S.items.push(it);
 let tl='';if(!old){S.drawDraft=null;await setMeta('drawdraft',null);SC=[];tl=await award({miles:8,coal:10});}
 toast((old?'Drawing updated ✓':'Hung in the Chart Room ⚓')+tl,tl.includes('🎉')?4000:2400);cur={kind:'drawing',col:old?'all':'hold'};go('shelf');};
+const picSheet=blob=>{
+const name='drawing-'+new Date().toISOString().slice(0,10)+'.png',ov=h('div',{class:'sheet'});
+let url='';try{url=URL.createObjectURL(blob);}catch(e){}
+let file=null;try{file=new File([blob],name,{type:'image/png'});}catch(e){}
+let canShare=false;try{canShare=!!(file&&navigator.share&&navigator.canShare&&navigator.canShare({files:[file]}));}catch(e){}
+const close=()=>{ov.remove();try{URL.revokeObjectURL(url);}catch(e){}};
+const share=async()=>{try{await navigator.share({files:[file],title:'My drawing'});}catch(e){}};
+const dl=()=>{const a=h('a',{href:url,download:name});document.body.append(a);a.click();a.remove();};
+ov.append(h('div',{class:'box'},h('h2',{},'📸 Picture ready!'),
+h('img',{src:url,alt:'Your drawing',style:'width:100%;max-height:38vh;object-fit:contain;border-radius:8px;background:#fff;border:2px solid #173A5C'}),
+h('p',{class:'lbl'},'To keep it in your Photos:'),
+h('ol',{class:'ol'},canShare?h('li',{},'Tap “Save to Photos” below, then choose “Save Image”.'):null,
+h('li',{},'Or press and hold your finger on the picture above, then tap “Add to Photos” (or “Save to Photos”).'),
+h('li',{},'Open the Photos app. Your drawing is there to use or send!')),
+canShare?h('button',{class:'opt',onclick:share},'📲 Save to Photos / Share'):null,
+h('button',{class:'opt',onclick:dl},'⬇️ Download as a file instead'),
+h('button',{class:'opt ghost',onclick:close},'Close')));
+document.body.append(ov);};
 const toPng=()=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=1200;c.height=900;c.getContext('2d').drawImage(img,0,0,1200,900);
-c.toBlob(b=>{const a=h('a',{href:URL.createObjectURL(b),download:'drawing-'+new Date().toISOString().slice(0,10)+'.png'});document.body.append(a);a.click();a.remove();});};img.src=svgUrl(SC);};
+c.toBlob(b=>{if(!b){say('Could not make the picture. Please try again.');return;}picSheet(b);});};img.src=svgUrl(SC);};
 paint();bars();fillTray();
 return h('div',{class:'wrap wide'},back(),
-h('div',{class:'hdr'},h('h2',{},"Captain's Drawing Table"),h('div',{},h('button',{class:'act sm',onclick:stowIt},'⚓ Stow it'),h('button',{class:'act sm ghost',onclick:toPng},'Save to device'),drawEdit?h('button',{class:'act sm red',onclick:()=>delItem(drawEdit)},'🗑 Delete'):null)),
+h('div',{class:'hdr'},h('h2',{},"Captain's Drawing Table"),h('div',{},h('button',{class:'act sm',onclick:stowIt},'⚓ Stow it'),h('button',{class:'act sm ghost',onclick:toPng},'Save picture'),drawEdit?h('button',{class:'act sm red',onclick:()=>delItem(drawEdit)},'🗑 Delete'):null)),
 h('div',{class:'tbl'},h('div',{},stage),h('div',{class:'side'},t2,t1,tabs,tray)));}
 
 let editId=null,LD=null;
@@ -514,8 +560,9 @@ function openPic(it){picId=it.id;go('pic');}
 function notePage(){const it=S.items.find(i=>i.id===noteId);if(!it)return home();
 const ti=h('input',{class:'dline',placeholder:'Title (optional)',style:'color:#F3EAD3;border-bottom-color:#C9A24B'});ti.value=it.title||'';
 const ta=h('textarea',{});ta.value=it.text||'';setTimeout(()=>ta.focus(),50);
-const save=async()=>{const t=ta.value.trim();if(!t){say('A note needs some words. Or use Delete.');return;}it.text=t;it.title=ti.value.trim();await put('items',it);toast('Note saved ✓');cur={kind:'note',col:'all'};go('shelf');};
-return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'⬅ Notice Board'),h('h2',{},'Edit note'),ti,ta,
+let nc=it.color||0,np=it.pin||0;
+const save=async()=>{const t=ta.value.trim();if(!t){say('A note needs some words. Or use Delete.');return;}it.text=t;it.title=ti.value.trim();it.color=nc;it.pin=np;await put('items',it);toast('Note saved ✓');cur={kind:'note',col:'all'};go('shelf');};
+return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'⬅ Notice Board'),h('h2',{},'Edit note'),ti,ta,notePicker(nc,np,(c,p)=>{nc=c;np=p;}),
 h('button',{class:'act',onclick:save},'💾 Save changes'),h('button',{class:'act red',onclick:()=>delItem(it.id)},'🗑 Delete'));}
 function picPage(){const it=S.items.find(i=>i.id===picId);if(!it)return home();
 return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'drawing',col:'all'};go('shelf');}},'⬅ Chart Room'),h('h2',{},it.title||'Picture'),
