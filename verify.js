@@ -106,6 +106,30 @@ function boot() {
   a.click('Delete cabin'); await wait(20); await a.dialog(null, 'Delete cabin');
   ok(![...a.d.querySelectorAll('.chip')].some(c => c.textContent === 'Big ideas'), 'shelf deleted (items return to Cargo Hold)');
 
+  // Oct 2026 (2): ship name, home order, copy / save text
+  a.click('Promenade'); await wait(30);
+  const kids = [...a.d.querySelector('.wrap').children];
+  const iBig = kids.findIndex(e => e.classList.contains('big')), iHud = kids.findIndex(e => e.classList.contains('hud')), iSh = kids.findIndex(e => e.classList.contains('shelves'));
+  ok(iBig > -1 && iBig < iHud && iHud < iSh, 'home: big buttons first, rank then shelves at the bottom');
+  ok(a.d.querySelector('svg.banner-art') && !a.d.querySelector('.cap') && a.d.querySelector('.shipemo').textContent === '🚢', 'home shows liner art and one default ship emoji');
+  ok(a.d.getElementById('shipname').textContent === "J.J.'s Ship Log", 'default ship name');
+  a.click('Rename ship'); await wait(20); await a.dialog('S.S. Wombat');
+  ok(a.d.getElementById('shipname').textContent === 'S.S. Wombat' && a.d.title === 'S.S. Wombat', 'ship can be renamed');
+  a.click('Rename ship'); await wait(20); await a.dialog('');
+  ok(a.d.getElementById('shipname').textContent === "J.J.'s Ship Log", 'empty name falls back to default');
+  a.click('Rename ship'); await wait(20); a.click('Emoji 🐙'); await wait(10); await a.dialog('S.S. Wombat');
+  ok(a.d.querySelector('.shipemo').textContent === '🐙' && a.d.getElementById('shipname').textContent === 'S.S. Wombat', 'ship emoji can be changed with the name');
+  a.click('Rename ship'); await wait(20); ok([...a.d.querySelectorAll('.emo.on')].map(b => b.textContent).join() === '🐙', 'dialog highlights current emoji'); await a.dialog(null, 'Cancel');
+  ok(a.d.querySelector('.shipemo').textContent === '🐙', 'cancel keeps emoji');
+  let copied = null; Object.defineProperty(a.dom.window.navigator, 'clipboard', { value: { writeText: async t => { copied = t; } }, configurable: true });
+  a.click('Quick Notes'); await wait(30); a.fire(a.d.querySelector('textarea'), 'hello team');
+  a.click('Copy'); await wait(30); ok(copied === 'hello team', 'Quick Note text copied to clipboard');
+  a.click('Save .txt'); await wait(20); ok(/Saved as a text file/.test(a.d.body.textContent), 'Save .txt works');
+  a.click('Pin it'); await wait(120); a.d.querySelector('.card:not(.prev)').click(); await wait(30);
+  a.fire(a.d.querySelector('input.dline'), 'Greeting'); copied = null; a.click('Copy'); await wait(30);
+  ok(copied && copied.startsWith('Greeting') && copied.includes('hello team'), 'Edit note: copy includes title and text');
+  const bk = await (async () => { a.click('Notice Board'); await wait(20); return null; })();
+
   console.log(failed ? `\n${failed} check(s) FAILED` : '\nAll checks passed');
   process.exit(failed ? 1 : 0);
 })();

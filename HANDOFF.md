@@ -66,6 +66,13 @@ Text parts like `LIFEBOAT|<setId>|<i>|<n>|<data>`, 2500 characters each (`PART`)
 - `verify.js` now stubs `TextEncoder`, `Image` and canvas so it runs on current Node; new checks cover note/pin colours, the 8 directions, flips, undo, and the Save picture sheet. The Quick Notes page now has a preview `.card.prev`, so tests select `.card:not(.prev)`.
 - Not tested on a real iPad: the Photos share sheet and long-press save (jsdom can't). Please try both once.
 
+## Oct 2026 update 2 (home layout, ship name, copy/export)
+- **Ship name:** editable. Stored in meta `shipname` (`S.shipName`, default `DEFNAME` = "J.J.'s Ship Log"); `shipName()` returns it, `renameShip()` opens the in-page `askText` dialog (max 40 chars; empty = default) and also sets `document.title`. It is included in the Lifeboat code and backup file (`name`); restore only applies it if the device still has the default name.
+- **Home header:** inline-SVG ocean liner (`linerArt()`), then one changeable ship emoji (meta `shipemoji`, `S.shipEmoji`, default 🚢, list `EMOS`) in front of the name, with a ✏️ button. `renameShip()` opens one dialog with the name box, an emoji grid and a "type your own emoji" box (first emoji only, via `firstEmoji`). The emoji is also in the Lifeboat code/backup (`emoji`).
+- **Home order:** header, banners, then Quick Notes / Drawing Table / Captain's Log / Shop / Lifeboat buttons, and at the bottom "Ship status and shelves" (rank HUD, Note Cabins / Chart Room / Library tiles).
+- **Copy / export of text:** `textTools(getText, getTitle)` adds 📋 Copy (`copyText`, clipboard API with `execCommand` fallback), 📤 Share (only where `navigator.share` exists, so the iPad share sheet can send to LINE/Teams) and 💾 Save .txt (`saveTextFile`) on Quick Notes and on Edit note (title + blank line + text).
+- `verify.js` has new checks for the above.
+
 ## Known gaps / ideas
 - Not tested with real touch and Apple Pencil input; try drag, the gold rotate/resize dots, pen and eraser on the iPad first.
 - No name box inside the Drawing Table (rename from the shelf).

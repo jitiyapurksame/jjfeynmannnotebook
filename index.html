@@ -71,6 +71,7 @@ textarea.ruled{border:0;border-radius:0;background:repeating-linear-gradient(#fb
 .card.prev{width:130px;min-height:84px;margin:8px 0 4px;transform:rotate(-2deg)}.lbl{font-weight:700;margin:10px 0 0}
 .orient{flex-basis:100%;display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-top:4px}.compass{display:grid;grid-template-columns:repeat(3,48px);gap:6px}.compass i{display:block}.flips{display:flex;flex-direction:column;gap:6px}.flips .tb{padding:0 12px;font-size:17px}
 .ol{margin:6px 0 10px;padding-left:22px;line-height:1.5}
+.banner-art{display:block;width:100%;max-height:150px;margin:0 0 4px}.namerow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.namerow h1{margin:0;overflow-wrap:anywhere}.editname{min-width:48px;min-height:48px;border-radius:12px;border:2px solid var(--brass);background:var(--deep);color:var(--brass);font-size:20px}.shipemo{margin-right:8px}.emogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(48px,1fr));gap:6px;margin:6px 0}.emo{min-height:48px;border-radius:10px;border:2px solid #0E22384d;background:#fff;font-size:26px;padding:0}.emo.on{border-color:var(--brass);box-shadow:0 0 0 3px var(--brass)}.txtrow{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}.lowhead{margin:26px 0 8px;font:700 19px Palatino,Georgia,serif;color:var(--brass);opacity:.9}
 .note{opacity:.8;font-size:15px}.empty{opacity:.7;padding:24px 0;text-align:center}
 </style></head>
 <body><div id="app"></div>
@@ -112,7 +113,35 @@ const putMany=(s,a)=>mem?(a.forEach(v=>M[s].set(v.id,v)),Promise.resolve()):tx(s
 const getMeta=async k=>{const r=mem?M.meta.get(k):await tx('meta','readonly',st=>st.get(k));return r&&r.v;};
 const setMeta=(k,v)=>put('meta',{k,v});
 
-let S={items:[],cols:[],draft:'',lastBackup:0,logDraft:null,drawDraft:null,ledger:{miles:0,coal:0,stars:0},owned:[]};
+const DEFNAME="J.J.'s Ship Log",DEFEMO='🚢';
+const EMOS=['🚢','⛵','🛥️','🛳️','⚓','🧑‍✈️','🧭','🛟','🌊','🐳','🐙','🦈','🐬','🦀','🏴‍☠️','🔭','🚀','🛸','🤖','🦖','🐉','🔥','⚡','🌟','🎮','🔧','🧪','🎨','🦊','🐱'];
+let S={shipName:DEFNAME,shipEmoji:DEFEMO,items:[],cols:[],draft:'',lastBackup:0,logDraft:null,drawDraft:null,ledger:{miles:0,coal:0,stars:0},owned:[]};
+const shipName=()=>(S.shipName||'').trim()||DEFNAME;
+const shipEmoji=()=>(S.shipEmoji||'').trim()||DEFEMO;
+const firstEmoji=t=>{t=(t||'').trim();if(!t)return'';try{if(window.Intl&&Intl.Segmenter){return [...new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(t)][0].segment;}}catch(e){}return [...t][0]||'';};
+async function renameShip(){
+let pick=shipEmoji();
+const nm=h('input',{class:'dline',maxlength:'40',placeholder:'Ship name',style:'color:#0E2238;border-bottom-color:#0E2238'});nm.value=shipName();
+const own=h('input',{class:'dline',placeholder:'or type your own emoji',style:'color:#0E2238;border-bottom-color:#0E2238;margin-top:8px'});
+const grid=h('div',{class:'emogrid'});
+const draw=()=>fill(grid,EMOS.map(e=>h('button',{class:'emo'+(e===pick?' on':''),'aria-label':'Emoji '+e,onclick:()=>{pick=e;own.value='';draw();}},e)));draw();
+own.addEventListener('input',()=>{const f=firstEmoji(own.value);if(f){pick=f;draw();}});
+const body=h('div',{},nm,h('div',{class:'lbl',style:'color:#0E2238'},'Pick your ship emoji'),grid,own);
+const r=await dlg('Name your ship, Captain!',body,[['Save',()=>({name:nm.value.trim().slice(0,40),emoji:pick})],['Cancel',null,'ghost']]);
+if(!r)return;S.shipName=r.name||DEFNAME;S.shipEmoji=r.emoji||DEFEMO;await setMeta('shipname',S.shipName);await setMeta('shipemoji',S.shipEmoji);document.title=shipName();toast('Ship ready ⚓ '+shipEmoji()+' '+shipName());render();}
+const linerArt=()=>{const e=document.createElement('div');e.innerHTML='<svg class="banner-art" viewBox="0 0 700 150" role="img" aria-label="An ocean liner at sea"><defs><linearGradient id="sk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b4a78"/><stop offset="1" stop-color="#3f86b5"/></linearGradient></defs><rect width="700" height="150" rx="14" fill="url(#sk)"/><circle cx="590" cy="38" r="20" fill="#F3EAD3" opacity=".9"/><g fill="#fff" opacity=".85"><ellipse cx="120" cy="30" rx="36" ry="9"/><ellipse cx="148" cy="24" rx="24" ry="8"/><ellipse cx="430" cy="48" rx="30" ry="8"/></g><g><rect x="150" y="60" width="26" height="42" rx="3" fill="#C9A24B"/><rect x="150" y="60" width="26" height="8" fill="#222"/><rect x="198" y="52" width="26" height="50" rx="3" fill="#C9A24B"/><rect x="198" y="52" width="26" height="8" fill="#222"/><rect x="246" y="60" width="26" height="42" rx="3" fill="#C9A24B"/><rect x="246" y="60" width="26" height="8" fill="#222"/><rect x="294" y="68" width="26" height="34" rx="3" fill="#C9A24B"/><rect x="294" y="68" width="26" height="8" fill="#222"/><rect x="120" y="98" width="330" height="22" fill="#F3EAD3"/><rect x="120" y="98" width="330" height="5" fill="#D64541"/><path d="M96 98 L120 98 L120 120 L108 120 Z M450 98 L500 98 L474 120 L450 120 Z" fill="#F3EAD3"/><path d="M96 120 L474 120 L450 132 L120 132 Z" fill="#0E2238"/><g fill="#0E2238"><circle cx="140" cy="109" r="3"/><circle cx="165" cy="109" r="3"/><circle cx="190" cy="109" r="3"/><circle cx="215" cy="109" r="3"/><circle cx="240" cy="109" r="3"/><circle cx="265" cy="109" r="3"/><circle cx="290" cy="109" r="3"/><circle cx="315" cy="109" r="3"/><circle cx="340" cy="109" r="3"/><circle cx="365" cy="109" r="3"/><circle cx="390" cy="109" r="3"/><circle cx="415" cy="109" r="3"/></g></g><path d="M0 128 q25 -14 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 V150 H0Z" fill="#14507a" opacity=".95"/><path d="M0 140 q25 -12 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 V150 H0Z" fill="#0b3a5e"/></svg>';return e.firstChild;};
+
+/* copy / share / save text (Quick Notes and Edit note) */
+async function copyText(t){t=(t||'').trim();if(!t){toast('Nothing to copy yet');return;}
+let ok=false;try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(t);ok=true;}}catch(e){}
+if(!ok){try{const x=h('textarea',{style:'position:fixed;left:-999px;top:0;opacity:0'});x.value=t;document.body.append(x);x.focus();x.select();x.setSelectionRange(0,t.length);ok=document.execCommand('copy');x.remove();}catch(e){}}
+if(ok)toast('Copied! Now paste it in your other app 📋');else say('Copy was blocked. Press and hold the words in the box, choose Select All, then Copy.');}
+function saveTextFile(t,name){t=(t||'').trim();if(!t){toast('Nothing to save yet');return;}
+const a=h('a',{href:URL.createObjectURL(new Blob([t],{type:'text/plain'})),download:(name||'note').replace(/[^\w\- ]+/g,'').trim().slice(0,30).replace(/ +/g,'-')+'.txt'});document.body.append(a);a.click();a.remove();toast('Saved as a text file 💾');}
+function textTools(get,getTitle){const full=()=>{const t=(get()||'').trim(),ti=getTitle?(getTitle()||'').trim():'';return ti&&t?ti+'\n\n'+t:t;};
+return h('div',{class:'txtrow'},h('button',{class:'act sm ghost',onclick:()=>copyText(full())},'📋 Copy'),
+navigator.share?h('button',{class:'act sm ghost',onclick:()=>{const t=full();if(!t){toast('Nothing to send yet');return;}navigator.share({text:t}).catch(()=>{});}},'📤 Share'):null,
+h('button',{class:'act sm ghost',onclick:()=>saveTextFile(full(),(getTitle&&getTitle())||'quick-note')},'💾 Save .txt'));}
 const reload=async()=>{S.items=await all('items');S.cols=await all('cols');};
 
 /* ---------- one-time migration from the old Ship Log (localStorage) ---------- */
@@ -145,7 +174,7 @@ const slim=i=>i.type==='log'&&i.data?Object.assign({},i,{data:Object.assign({},i
 async function makeParts(){
 const items=S.items.filter(i=>!(i.type==='drawing'&&i.image&&!i.scene)).map(slim);
 const skipped=S.items.length-items.length;
-const s=await enc({v:1,cols:S.cols,items,ledger:S.ledger,owned:S.owned});
+const s=await enc({v:1,cols:S.cols,items,ledger:S.ledger,owned:S.owned,name:S.shipName,emoji:S.shipEmoji});
 const id=uid().slice(0,4),n=Math.ceil(s.length/PART),parts=[];
 for(let i=0;i<n;i++)parts.push(`LIFEBOAT|${id}|${i+1}|${n}|${s.slice(i*PART,(i+1)*PART)}`);
 await setMeta('lastBackup',Date.now());S.lastBackup=Date.now();
@@ -153,7 +182,7 @@ return{parts,skipped};}
 async function mergeIn(p){
 const haveI=new Set(S.items.map(i=>i.id)),haveC=new Set(S.cols.map(c=>c.id));
 const ni=(p.items||[]).filter(i=>!haveI.has(i.id)),nc=(p.cols||[]).filter(c=>!haveC.has(c.id));
-await putMany('items',ni);await putMany('cols',nc);await reload();if(p.ledger){['miles','coal','stars'].forEach(k=>{S.ledger[k]=Math.max(S.ledger[k]||0,p.ledger[k]||0);});await setMeta('ledger',S.ledger);}if(p.owned){S.owned=[...new Set([...S.owned,...p.owned])];await setMeta('owned',S.owned);}return ni.length;}
+await putMany('items',ni);await putMany('cols',nc);await reload();if(p.ledger){['miles','coal','stars'].forEach(k=>{S.ledger[k]=Math.max(S.ledger[k]||0,p.ledger[k]||0);});await setMeta('ledger',S.ledger);}if(p.owned){S.owned=[...new Set([...S.owned,...p.owned])];await setMeta('owned',S.owned);}if(p.name&&shipName()===DEFNAME&&p.name!==DEFNAME){S.shipName=String(p.name).slice(0,40);await setMeta('shipname',S.shipName);document.title=shipName();}if(p.emoji&&shipEmoji()===DEFEMO&&p.emoji!==DEFEMO){S.shipEmoji=String(p.emoji).slice(0,16);await setMeta('shipemoji',S.shipEmoji);}return ni.length;}
 async function restoreCode(text){
 const sets={};let m;const re=/LIFEBOAT\|(\w+)\|(\d+)\|(\d+)\|([A-Za-z0-9_-]+)/g;
 while((m=re.exec(text))){(sets[m[1]]=sets[m[1]]||{n:+m[3],p:{}}).p[+m[2]]=m[4];}
@@ -175,8 +204,8 @@ function home(){
 const n=t=>S.items.filter(i=>i.type===t).length,hold=S.items.filter(i=>!i.collectionId).length;
 const shelf=(k,ic)=>h('button',{class:'shelf',onclick:()=>{cur={kind:k,col:'all'};go('shelf');}},h('b',{},n(k)),h('span',{},ic+' '+T[k].shelf));
 const due=S.items.length&&Date.now()-S.lastBackup>7*864e5;
-return h('div',{class:'wrap'},h('h1',{},"J.J.'s Ship Log"),h('p',{class:'sub'},'The Promenade Deck'),hud(),
-h('div',{class:'shelves'},shelf('note','📝'),shelf('drawing','🎨'),shelf('log','📖')),
+return h('div',{class:'wrap'},linerArt(),
+h('div',{class:'namerow'},h('h1',{},h('span',{class:'shipemo'},shipEmoji()),h('span',{id:'shipname'},shipName())),h('button',{class:'editname','aria-label':'Rename ship',onclick:renameShip},'✏️')),h('p',{class:'sub'},'The Promenade Deck · tap ✏️ to name your ship'),
 S.temp?h('div',{class:'banner'},'⚠️ Preview mode: nothing is saved after this page closes.'):null,
 due?h('div',{class:'banner'},'🛟 Lifeboat drill: make a backup code so nothing is lost.'):null,
 big('📝',"Captain's Quick Notes",'Pin an idea on the Notice Board',()=>go('quick')),
@@ -184,7 +213,9 @@ big('🎨',"Captain's Drawing Table",S.drawDraft&&S.drawDraft.length?'An unfinis
 big('📖',"Captain's Log",S.logDraft?'An unfinished page is waiting':'Write first, sort it later',()=>openLog(null)),
 hold?h('p',{class:'note'},'⚓ '+hold+' in the Cargo Hold, ready to stow in a cabin'):null,
 big('🛒',"The Purser's Shop",'Spend your coal on outfits and papers',()=>go('shop')),
-big('🛟','Lifeboat','Make or use a backup code',()=>go('lifeboat'),'life'));}
+big('🛟','Lifeboat','Make or use a backup code',()=>go('lifeboat'),'life'),
+h('div',{class:'lowhead'},'🧭 Ship status and shelves'),hud(),
+h('div',{class:'shelves'},shelf('note','📝'),shelf('drawing','🎨'),shelf('log','📖')));}
 
 const NOTEC=['#fff7da','#dff1ee','#fbdcd4','#e4e0f6','#e6f0cd','#dbe8fb','#ffe3ef'];
 const PINC=['#D64541','#2E86DE','#4DAA57','#F5A623','#8E5BD0','#FF8FB1','#222222','#FFFFFF'];
@@ -205,7 +236,7 @@ await put('items',it);S.items.push(it);S.draft='';await setMeta('draft','');cons
 setTimeout(()=>ta.focus(),50);
 const recent=S.items.filter(i=>i.type==='note').sort((a,b)=>b.createdAt-a.createdAt).slice(0,6);
 return h('div',{class:'wrap'},back(),h('h2',{},"Captain's Quick Notes"),ta,
-notePicker(qCol,qPin,(c,p)=>{qCol=c;qPin=p;}),
+textTools(()=>ta.value,null),notePicker(qCol,qPin,(c,p)=>{qCol=c;qPin=p;}),
 h('button',{class:'act',onclick:stowIt},'📌 Pin it'),
 recent.length?h('div',{},h('div',{class:'grid'},recent.map(i=>card(i,()=>openNote(i)))),h('button',{class:'act ghost',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'See the whole Notice Board')):null);}
 
@@ -525,7 +556,7 @@ h('button',{class:'act',onclick:async()=>{try{await navigator.clipboard.writeTex
 navigator.share?h('button',{class:'act ghost',onclick:()=>navigator.share({text:p}).catch(()=>{})},'Share'):null)));};
 const restore=async()=>{try{const n=await restoreCode(inp.value);inp.value='';toast(n+' item'+(n===1?'':'s')+' added');render();}catch(e){say(e.message);}};
 const file=h('input',{type:'file',accept:'.json',style:'display:none',onchange:async e=>{const f=e.target.files[0];if(!f)return;try{const n=await mergeIn(JSON.parse(await f.text()));toast(n+' items added');render();}catch(x){say('That file could not be read.');}}});
-const saveFile=async()=>{const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify({v:1,cols:S.cols,items:S.items,ledger:S.ledger,owned:S.owned})],{type:'application/json'})),download:'ship-log-backup-'+new Date().toISOString().slice(0,10)+'.json'});document.body.append(a);a.click();a.remove();await setMeta('lastBackup',Date.now());S.lastBackup=Date.now();};
+const saveFile=async()=>{const a=h('a',{href:URL.createObjectURL(new Blob([JSON.stringify({v:1,cols:S.cols,items:S.items,ledger:S.ledger,owned:S.owned,name:S.shipName,emoji:S.shipEmoji})],{type:'application/json'})),download:'ship-log-backup-'+new Date().toISOString().slice(0,10)+'.json'});document.body.append(a);a.click();a.remove();await setMeta('lastBackup',Date.now());S.lastBackup=Date.now();};
 return h('div',{class:'wrap'},back(),h('h2',{},'🛟 Lifeboat'),
 h('p',{class:'note'},'Make a code, send it by LINE, paste it on the new device. Restoring adds to what is already there and never erases anything.'),
 h('button',{class:'act',onclick:make},'Make Lifeboat code'),out,
@@ -562,7 +593,7 @@ const ti=h('input',{class:'dline',placeholder:'Title (optional)',style:'color:#F
 const ta=h('textarea',{});ta.value=it.text||'';setTimeout(()=>ta.focus(),50);
 let nc=it.color||0,np=it.pin||0;
 const save=async()=>{const t=ta.value.trim();if(!t){say('A note needs some words. Or use Delete.');return;}it.text=t;it.title=ti.value.trim();it.color=nc;it.pin=np;await put('items',it);toast('Note saved ✓');cur={kind:'note',col:'all'};go('shelf');};
-return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'⬅ Notice Board'),h('h2',{},'Edit note'),ti,ta,notePicker(nc,np,(c,p)=>{nc=c;np=p;}),
+return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'note',col:'all'};go('shelf');}},'⬅ Notice Board'),h('h2',{},'Edit note'),ti,ta,textTools(()=>ta.value,()=>ti.value),notePicker(nc,np,(c,p)=>{nc=c;np=p;}),
 h('button',{class:'act',onclick:save},'💾 Save changes'),h('button',{class:'act red',onclick:()=>delItem(it.id)},'🗑 Delete'));}
 function picPage(){const it=S.items.find(i=>i.id===picId);if(!it)return home();
 return h('div',{class:'wrap'},h('button',{class:'back',onclick:()=>{cur={kind:'drawing',col:'all'};go('shelf');}},'⬅ Chart Room'),h('h2',{},it.title||'Picture'),
@@ -573,7 +604,7 @@ h('button',{class:'act',onclick:()=>renameItem(it)},'🏷️ Rename'),h('button'
 function render(){const v={note:notePage,pic:picPage,home,quick,shelf:shelfView,table:tablePage,shop,lifeboat,logpage:logPage}[view]();const a=document.getElementById('app');a.replaceChildren(v);}
 
 (async function init(){
-try{try{await openDb();}catch(e){mem=true;S.temp=true;}await migrate();await reload();S.draft=(await getMeta('draft'))||'';S.lastBackup=(await getMeta('lastBackup'))||0;S.logDraft=(await getMeta('logdraft'))||null;S.drawDraft=(await getMeta('drawdraft'))||null;S.ledger=(await getMeta('ledger'))||{miles:0,coal:0,stars:0};S.owned=(await getMeta('owned'))||[];
+try{try{await openDb();}catch(e){mem=true;S.temp=true;}await migrate();await reload();S.draft=(await getMeta('draft'))||'';S.shipName=(await getMeta('shipname'))||DEFNAME;S.shipEmoji=(await getMeta('shipemoji'))||DEFEMO;document.title=shipName();S.lastBackup=(await getMeta('lastBackup'))||0;S.logDraft=(await getMeta('logdraft'))||null;S.drawDraft=(await getMeta('drawdraft'))||null;S.ledger=(await getMeta('ledger'))||{miles:0,coal:0,stars:0};S.owned=(await getMeta('owned'))||[];
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}
 catch(e){document.getElementById('app').append(h('div',{class:'wrap'},h('p',{class:'banner'},'The ship could not open its storage ('+e.message+'). Try another browser window, not Private mode.')));return;}
 try{render();}catch(e){document.getElementById('app').append(h('pre',{class:'banner'},'Error: '+e.message+'\n'+(e.stack||'')));}})();
