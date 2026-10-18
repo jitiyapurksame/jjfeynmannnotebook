@@ -67,7 +67,8 @@ function boot() {
   a.click('Promenade'); await wait(30); a.click('Drawing Table'); await wait(30);
   a.click('Blocky Captain'); await wait(20); ok(a.d.querySelectorAll('.stage [data-id]').length === 7, 'Blocky Captain adds 7 parts');
   a.click('Blocky Captainess'); await wait(20); ok(a.d.querySelectorAll('.stage [data-id]').length === 16, 'Captainess adds 9 parts');
-  for (const t of ['Shapes', 'Nautical', 'Vehicles', 'Animals', 'Space', 'RPG', 'Engineer', 'Science', 'Food']) { a.click(t); await wait(15); a.d.querySelector('.tray').click(); }
+  a.click('Items'); await wait(15);
+  for (const t of ['Shapes', 'Nautical', 'Vehicles', 'Animals', 'Space', 'RPG', 'Engineer', 'Science', 'Food']) { a.click(t); await wait(15); a.d.querySelector('.tgrid .tray').click(); }
   ok(a.d.querySelectorAll('.stage [data-id]').length === 25, 'every item tab adds a piece');
   const tfm = () => [...a.d.querySelectorAll('.stage [data-id]')].map(g => g.getAttribute('transform'));
   a.click('Face right'); await wait(10);
@@ -129,6 +130,45 @@ function boot() {
   a.fire(a.d.querySelector('input.dline'), 'Greeting'); copied = null; a.click('Copy'); await wait(30);
   ok(copied && copied.startsWith('Greeting') && copied.includes('hello team'), 'Edit note: copy includes title and text');
   const bk = await (async () => { a.click('Notice Board'); await wait(20); return null; })();
+
+  // Oct 2026 (3): mushroom figures, items search, scenes locked / unlocked
+  const cnt = () => a.d.querySelectorAll('.stage svg [data-id]').length;
+  a.click('Promenade'); await wait(30); a.click('Drawing Table'); await wait(40);
+  a.click('Characters'); await wait(10); const c0 = cnt();
+  a.click('Mushroom Boy'); await wait(20);
+  ok(cnt() === c0 + 7 && a.d.querySelector('.stage svg').innerHTML.includes('F6E7B4'), 'Mushroom Boy adds a figure with a mushroom hat');
+  a.click('Mushroom Girl'); await wait(20); ok(cnt() === c0 + 16, 'Mushroom Girl adds a figure with hair and hat');
+  a.click('Items'); await wait(10);
+  ok(!!a.d.querySelector('input.srch') && a.d.querySelectorAll('.kws .chip').length > 12, 'Items section has a search box, suggestions and categories');
+  a.click('All'); await wait(10);
+  ok(a.d.querySelector('.tgrid') && a.d.querySelectorAll('.tgrid .tray').length > 60, 'Items grid lists all pre-made items in a scroll area');
+  const search = async t => { a.fire(a.d.querySelector('input.srch'), t); await wait(10); };
+  await search('eiffel'); ok(a.d.querySelectorAll('.tgrid .tray').length === 1, 'search finds one item');
+  let n0 = cnt(); a.click('Eiffel Tower (France)'); await wait(10); ok(cnt() === n0 + 1, 'searched item can be added');
+  await search('tree'); ok(a.d.querySelectorAll('.tgrid .tray').length >= 3, 'search tree finds emoji trees');
+  n0 = cnt(); a.click('tree plant'); await wait(10); ok(cnt() === n0 + 1 && a.d.querySelector('.stage svg').innerHTML.includes('🌳'), 'emoji piece renders as text');
+  await search('france'); ok(a.d.querySelectorAll('.tgrid .tray').length === 1, 'search by country works');
+  await search('zzzz'); ok(/Nothing found/.test(a.d.querySelector('.tgrid').textContent), 'empty search shows a friendly message');
+  a.click('mushroom'); await wait(10); ok(a.d.querySelector('input.srch').value === 'mushroom' && a.d.querySelectorAll('.tgrid .tray').length >= 3, 'tapping a suggestion searches');
+  a.click('Platformer'); await wait(10); ok(a.d.querySelector('input.srch').value === '' && a.d.querySelectorAll('.tgrid .tray').length === 12, 'category chip shows its items');
+  // scenes: locked until enough notes / drawings are made (fresh app, empty storage)
+  const f = boot(); await wait(600);
+  const chipTxt = n => [...f.d.querySelectorAll('.chip')].map(c => c.textContent).find(t => t.includes(n));
+  const toTable = async () => { try { f.click('Promenade'); } catch (e) {} await wait(30); f.click('Drawing Table'); await wait(40); f.click('Scenes'); await wait(10); };
+  const pin = async i => { try { f.click('Promenade'); } catch (e) {} await wait(30); f.click('Quick Notes'); await wait(30); f.fire(f.d.querySelector('textarea'), 'note ' + i); f.click('Pin it'); await wait(120); };
+  f.click('Drawing Table'); await wait(40); f.click('Scenes'); await wait(10);
+  ok(/🔒 Garden · 0\/3/.test(chipTxt('Garden')) && /🔒 City · 0\/6/.test(chipTxt('City')) && /🔒 Countryside · 0\/10/.test(chipTxt('Countryside')), 'new scenes start locked with progress');
+  f.click('Garden'); await wait(10);
+  ok(!f.d.querySelector('.stage svg').innerHTML.includes('#3E8E41') && /make 3 more notes or drawings/.test(f.d.body.textContent), 'locked scene cannot be used and explains how to unlock');
+  for (let i = 0; i < 3; i++) await pin(i);
+  ok(/New scene unlocked: Garden/.test(f.d.body.textContent), 'third note unlocks the Garden');
+  await toTable();
+  ok(!/🔒/.test(chipTxt('Garden')) && /🔒 City · 3\/6/.test(chipTxt('City')), 'Garden open, City still locked at 3/6');
+  f.click('Garden'); await wait(10); ok(f.d.querySelector('.stage svg').innerHTML.includes('#6CBF4B'), 'Garden scene paper applies when unlocked');
+  for (let i = 3; i < 10; i++) await pin(i);
+  await toTable(); ok(!/🔒/.test(chipTxt('City')) && !/🔒/.test(chipTxt('Countryside')), 'all three scenes open after 10 notes / drawings');
+  f.click('City'); await wait(10); ok(f.d.querySelector('.stage svg').innerHTML.includes('#4A5560'), 'City scene paper applies');
+  f.click('Countryside'); await wait(10); ok(f.d.querySelector('.stage svg').innerHTML.includes('#C0392B'), 'Countryside scene paper applies');
 
   console.log(failed ? `\n${failed} check(s) FAILED` : '\nAll checks passed');
   process.exit(failed ? 1 : 0);

@@ -73,6 +73,21 @@ Text parts like `LIFEBOAT|<setId>|<i>|<n>|<data>`, 2500 characters each (`PART`)
 - **Copy / export of text:** `textTools(getText, getTitle)` adds 📋 Copy (`copyText`, clipboard API with `execCommand` fallback), 📤 Share (only where `navigator.share` exists, so the iPad share sheet can send to LINE/Teams) and 💾 Save .txt (`saveTextFile`) on Quick Notes and on Edit note (title + blank line + text).
 - `verify.js` has new checks for the above.
 
+## Oct 2026 update 3 (mushroom characters, scenes, emoji, landmarks)
+- **Mushroom Boy / Mushroom Girl** buttons (Crew tab): `figParts(fem, outfit, mush)` puts the generic spotted `mushcap` hat (red, colour changeable) on the figure; `mushcap` is also a loose piece in Crew. Astronaut helmet keeps its helmet.
+- **Scene papers:** Garden, City, Countryside (free) in the Paper tab. `PAPERS` entries may now have `art` (SVG drawn *behind* objects) besides `ov` (drawn on top). Shop lists only papers with `price>0`.
+- **Eraser is now a real eraser:** `layers()` in `sceneSvg` turns `e:1` strokes into an SVG `<mask>` over everything drawn before them (unique ids `emN`), so it reveals the scene instead of painting a flat colour. Old drawings still render.
+- **New tabs:** Platformer (original generic items: spotted mushroom, mushroom house, brick, star block, pipe, grass platform, cloud, hill, goal flag + coin/star/heart), Landmarks (SVG: Eiffel, pyramids, Big Ben, Taj Mahal, Pisa, Opera House, Wat Arun + emoji 🗽🗿🗻🏯⛩️🕌🛕🏰🎡), Plants (emoji), City (emoji).
+- **Emoji pieces:** tray keys starting `e:` create `{k:'emo', t:'🌳'}`; `D.emo(c,o)` draws a `<text>`. `D[k]` functions now receive the whole object as a 2nd argument. Emoji ignore the colour swatches (they keep their own colours) but can be moved, turned, flipped and resized. Emoji look depends on the device font (Apple emoji on iPad); the Lifeboat code stores just the character.
+- **Copyright note:** Platformer items are deliberately generic (no Mario/Toad/Goomba/Koopa characters, no “?” block, no M cap, no moustache, no green warp pipe colour or character faces). Keep new items original in that spirit.
+- Not tested on a real iPad: emoji in the saved PNG (canvas render of the SVG) — please check once that emoji appear in “Save picture”.
+
+## Oct 2026 update 4 (tidier Drawing Table, locked scenes)
+- **Three sections** in the Drawing Table (`sec`): 👥 Characters (figure buttons, outfits, body pieces), 🧩 Items (all pre-made items), 🖼️ Scenes (papers/backgrounds). Replaces the old one-row-of-tabs; the Paper tab is now Scenes.
+- **Items section:** search box (`.srch`, matches category, name, `NAMES`/`EN` keywords, country names, emoji), tappable suggestion words (`SUGG`), scrolling category chips (`CATS`) and a fixed-height scrolling grid (`.tgrid`, 230px). Emoji keywords live in `EN` (key `e:<emoji>`); add a keyword there when adding an item. Search ignores the category; “All” and search de-duplicate items that sit in two categories.
+- **Locked scenes:** Garden needs 3, City 6, Countryside 10 saved notes + drawings (`need` in `PAPERS`; `made()`, `sceneOpen()`, `checkScenes()`). Locked chips show 🔒 and progress (e.g. 3/6); tapping explains how many more to make. Unlocks are stored in meta `scenes` and never re-lock; they are re-derived from the item count, so a restored backup unlocks them too. `award()` runs the check and appends “🎉 New scene unlocked”. Coal-priced papers still work as before.
+- `verify.js` tests the sections, search, suggestions, categories, and the locked → unlocked flow with a fresh app.
+
 ## Known gaps / ideas
 - Not tested with real touch and Apple Pencil input; try drag, the gold rotate/resize dots, pen and eraser on the iPad first.
 - No name box inside the Drawing Table (rename from the shelf).
